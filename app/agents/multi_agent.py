@@ -79,12 +79,16 @@ class OrchestratorAgent:
         summarization_agent: "SummarizationAgent",
         fact_checking_agent: "FactCheckingAgent",
         final_synthesis_agent: "FinalSynthesisAgent",
+        max_evidence_chunks: int = 8,
     ) -> None:
+        if max_evidence_chunks <= 0:
+            raise ValueError("max_evidence_chunks must be greater than 0")
         self.llm_client = llm_client
         self.search_agent = search_agent
         self.summarization_agent = summarization_agent
         self.fact_checking_agent = fact_checking_agent
         self.final_synthesis_agent = final_synthesis_agent
+        self.max_evidence_chunks = max_evidence_chunks
 
     async def answer(self, query: str, top_k: int = 5) -> MultiAgentAnswer:
         logger.info("Orchestrator starting query_chars=%s top_k=%s", len(query), top_k)
@@ -97,7 +101,8 @@ class OrchestratorAgent:
         )
         evidence, search_usage = await self.search_agent.search(query, plan, top_k=top_k)
         logger.info("Orchestrator search complete evidence=%s", len(evidence))
-        evidence_notes, summary_usage = await self.summarization_agent.summarize(evidence)
+        selected_evidence = self._select_evidence_for_summarization(evidence)
+        evidence_notes, summary_usage = await self.summarization_agent.summarize(selected_evidence)
         logger.info("Orchestrator summarization complete notes=%s", len(evidence_notes))
         draft_answer, draft_usage = await self.final_synthesis_agent.write_answer(
             query=query,
@@ -121,8 +126,8 @@ class OrchestratorAgent:
                 use_web=plan.use_web,
             )
             evidence = _dedupe_evidence([*evidence, *extra_evidence])
-            extra_notes, extra_summary_usage = await self.summarization_agent.summarize(extra_evidence)
-            evidence_notes = _dedupe_notes([*evidence_notes, *extra_notes])
+            selected_evidence = self._select_evidence_for_summarization(evidence)
+            evidence_notes, extra_summary_usage = await self.summarization_agent.summarize(selected_evidence)
             draft_answer, extra_draft_usage = await self.final_synthesis_agent.write_answer(
                 query=query,
                 evidence_notes=evidence_notes,
@@ -161,6 +166,16 @@ class OrchestratorAgent:
             fact_check=fact_check,
             token_usage=_sum_usage(token_usage, final_usage),
         )
+
+    def _select_evidence_for_summarization(self, evidence: list[Evidence]) -> list[Evidence]:
+        selected = evidence[: self.max_evidence_chunks]
+        if len(evidence) > len(selected):
+            logger.info(
+                "Capped evidence for summarization selected=%s available=%s",
+                len(selected),
+                len(evidence),
+            )
+        return selected
 
     async def plan(self, query: str) -> tuple[QueryPlan, TokenUsage]:
         logger.info("Planning query query_chars=%s", len(query))

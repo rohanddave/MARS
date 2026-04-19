@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import logging
 from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
 from app.embedder import OpenAIEmbedder
 from app.vector_store import PineconeVectorStore
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -22,6 +25,7 @@ class ResearchPaperRetriever:
         self.vector_store = vector_store
 
     async def retrieve(self, query: str, top_k: int = 5) -> list[RetrievedChunk]:
+        logger.info("Retrieving chunks query_chars=%s top_k=%s", len(query), top_k)
         query_embedding = await self.embedder.embed(query)
         records = self.vector_store.query(query_embedding, top_k=top_k)
 
@@ -37,4 +41,5 @@ class ResearchPaperRetriever:
                 )
             )
 
+        logger.info("Retrieved chunks count=%s", len(chunks))
         return chunks

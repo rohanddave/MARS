@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 import httpx
 
 from app.config import OpenAISettings
 from app.models.answer import CompletionResult, TokenUsage
+
+logger = logging.getLogger(__name__)
 
 
 class LLMClient:
@@ -14,11 +17,18 @@ class LLMClient:
 
     async def complete(self, prompt: str) -> CompletionResult:
         if not self.settings.openai_api_key:
+            logger.warning("OpenAI API key is not configured; returning placeholder LLM response")
             return CompletionResult(
                 text="LLM answering is not configured yet. Set OPENAI_API_KEY to enable generated answers.",
                 token_usage=TokenUsage(input_tokens=0, output_tokens=0, total_tokens=0),
             )
 
+        logger.info(
+            "Sending completion request model=%s prompt_chars=%s max_output_tokens=%s",
+            self.settings.openai_answer_model,
+            len(prompt),
+            self.settings.openai_answer_max_output_tokens,
+        )
         body = {
             "model": self.settings.openai_answer_model,
             "instructions": (
@@ -40,13 +50,21 @@ class LLMClient:
             )
 
         if not 200 <= response.status_code < 300:
+            logger.error("OpenAI Responses API failed status=%s body=%s", response.status_code, response.text)
             raise LLMClientError(f"OpenAI Responses API request failed: {response.status_code} {response.text}")
 
         payload = response.json()
-        return CompletionResult(
+        result = CompletionResult(
             text=_extract_text(payload),
             token_usage=_extract_token_usage(payload),
         )
+        logger.info(
+            "Completion finished model=%s output_chars=%s total_tokens=%s",
+            self.settings.openai_answer_model,
+            len(result.text),
+            result.token_usage.total_tokens,
+        )
+        return result
 
 
 class LLMClientError(RuntimeError):

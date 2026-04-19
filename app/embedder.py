@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 import httpx
 
 from app.llm_client import LLMClient, LLMClientError
+
+logger = logging.getLogger(__name__)
 
 
 class OpenAIEmbedder:
@@ -14,8 +17,15 @@ class OpenAIEmbedder:
     async def embed(self, text: str) -> list[float]:
         settings = self.llm_client.settings
         if not settings.openai_api_key:
+            logger.error("OpenAI API key is not configured; embedding request cannot run")
             raise LLMClientError("OpenAI embedding is not configured. Set OPENAI_API_KEY to enable embeddings.")
 
+        logger.info(
+            "Sending embedding request model=%s text_chars=%s dimensions=%s",
+            settings.openai_embedding_model,
+            len(text),
+            settings.openai_embedding_dimensions,
+        )
         body = {
             "model": settings.openai_embedding_model,
             "input": text,
@@ -34,9 +44,12 @@ class OpenAIEmbedder:
             )
 
         if not 200 <= response.status_code < 300:
+            logger.error("OpenAI Embeddings API failed status=%s body=%s", response.status_code, response.text)
             raise LLMClientError(f"OpenAI Embeddings API request failed: {response.status_code} {response.text}")
 
-        return _extract_embedding(response.json())
+        embedding = _extract_embedding(response.json())
+        logger.info("Embedding finished vector_dimensions=%s", len(embedding))
+        return embedding
 
 
 def _extract_embedding(payload: dict[str, Any]) -> list[float]:

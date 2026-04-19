@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import os
 import shutil
 import time
@@ -31,6 +32,8 @@ from app.llm_client import LLMClient
 from app.models.answer import TokenUsage
 from app.retriever import ResearchPaperRetriever
 from app.vector_store import PineconeVectorStore
+
+logger = logging.getLogger(__name__)
 
 QUESTIONS = [
     "What is the main contribution of the research paper?",
@@ -84,11 +87,21 @@ def _model_for(role: str, default_model: str) -> str:
     return os.getenv(env_name, default_model)
 
 
+def _configure_logging() -> None:
+    log_level = os.getenv("LOG_LEVEL", "INFO").upper()
+    logging.basicConfig(
+        level=getattr(logging, log_level, logging.INFO),
+        format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
+    )
+    logger.info("Logging configured level=%s", log_level)
+
+
 def build_baseline_agent(
     retriever: ResearchPaperRetriever,
     settings: OpenAISettings,
 ) -> BaselineAgent:
     baseline_model = _model_for("baseline", settings.openai_answer_model)
+    logger.info("Building baseline agent model=%s", baseline_model)
     return BaselineAgent(retriever=retriever, llm_client=_llm_client(settings, baseline_model))
 
 
@@ -99,6 +112,7 @@ def build_orchestrator_agent(
 ) -> OrchestratorAgent:
     default_model = settings.openai_answer_model
     config = config or _default_agent_model_config(default_model)
+    logger.info("Building orchestrator agent config=%s", config)
     planner_client = _llm_client(settings, config.orchestrator_model)
     search_client = _llm_client(settings, config.search_model)
     summary_client = _llm_client(settings, config.summarization_model)
@@ -115,9 +129,11 @@ def build_orchestrator_agent(
 
 
 async def _measure(label: str, run: Callable[[], Awaitable[object]]) -> tuple[object, float]:
+    logger.info("Starting measured run label=%s", label)
     start = time.perf_counter()
     result = await run()
     latency_seconds = time.perf_counter() - start
+    logger.info("Finished measured run label=%s latency_seconds=%.3f", label, latency_seconds)
     print(f"\n--- {label} ---")
     print(f"latency_seconds: {latency_seconds:.3f}")
     return result, latency_seconds
@@ -132,6 +148,12 @@ async def _compare_question(
     orchestrator_agent: OrchestratorAgent,
     top_k: int = 5,
 ) -> QuestionRunMetrics:
+    logger.info(
+        "Comparing question experiment=%s question_index=%s top_k=%s",
+        experiment_name,
+        question_index,
+        top_k,
+    )
     print(f"\n{'=' * 80}")
     print(experiment_name)
     print(f"question: {question}")
@@ -158,6 +180,13 @@ async def _compare_question(
     print(f"orchestrator_evidence_count: {len(orchestrator_result.evidence)}")
 
     status_counts = _fact_check_status_counts(orchestrator_result)
+    logger.info(
+        "Question comparison complete experiment=%s question_index=%s baseline_latency=%.3f orchestrator_latency=%.3f",
+        experiment_name,
+        question_index,
+        baseline_latency,
+        orchestrator_latency,
+    )
     return QuestionRunMetrics(
         experiment_slug=config.slug,
         experiment_name=experiment_name,
@@ -182,6 +211,7 @@ async def _run_agent_config_experiment(
     retriever: ResearchPaperRetriever,
     settings: OpenAISettings,
 ) -> None:
+    logger.info("Starting experiment slug=%s name=%s", config.slug, config.name)
     print(f"\n\n{'#' * 80}")
     print(f"running {config.name}")
     _print_agent_config(config)
@@ -202,6 +232,7 @@ async def _run_agent_config_experiment(
         )
 
     output_dir = _save_experiment_results(config, metrics)
+    logger.info("Finished experiment slug=%s output_dir=%s", config.slug, output_dir)
     print(f"\nsaved_results: {output_dir}")
 
 
@@ -357,8 +388,10 @@ def _print_agent_config(config: AgentModelConfig) -> None:
 def _save_experiment_results(config: AgentModelConfig, metrics: list[QuestionRunMetrics]) -> Path:
     output_dir = RESULTS_DIR / config.slug
     if output_dir.exists():
+        logger.info("Removing existing result directory path=%s", output_dir)
         shutil.rmtree(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
+    logger.info("Saving experiment results path=%s metrics=%s", output_dir, len(metrics))
 
     _write_answers(output_dir, config, metrics)
     _write_metrics_json(output_dir, config, metrics)
@@ -370,6 +403,7 @@ def _save_experiment_results(config: AgentModelConfig, metrics: list[QuestionRun
 
 
 def _write_answers(output_dir: Path, config: AgentModelConfig, metrics: list[QuestionRunMetrics]) -> None:
+    logger.info("Writing answers output_dir=%s", output_dir)
     lines = [
         f"# {config.name}",
         "",
@@ -413,9 +447,11 @@ def _write_answers(output_dir: Path, config: AgentModelConfig, metrics: list[Que
         )
 
     (output_dir / "answers.md").write_text("\n".join(lines), encoding="utf-8")
+    logger.info("Wrote answers file=%s", output_dir / "answers.md")
 
 
 def _write_metrics_json(output_dir: Path, config: AgentModelConfig, metrics: list[QuestionRunMetrics]) -> None:
+    logger.info("Writing metrics JSON output_dir=%s", output_dir)
     payload = {
         "config": asdict(config),
         "questions": [
@@ -428,9 +464,11 @@ def _write_metrics_json(output_dir: Path, config: AgentModelConfig, metrics: lis
         ],
     }
     (output_dir / "metrics.json").write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    logger.info("Wrote metrics file=%s", output_dir / "metrics.json")
 
 
 def _plot_latency(output_dir: Path, metrics: list[QuestionRunMetrics]) -> None:
+    logger.info("Plotting latency output_dir=%s", output_dir)
     labels = _question_labels(metrics)
     _bar_pair_plot(
         output_path=output_dir / "latency_seconds.png",
@@ -443,6 +481,7 @@ def _plot_latency(output_dir: Path, metrics: list[QuestionRunMetrics]) -> None:
 
 
 def _plot_token_usage(output_dir: Path, metrics: list[QuestionRunMetrics]) -> None:
+    logger.info("Plotting token usage output_dir=%s", output_dir)
     labels = _question_labels(metrics)
     _bar_pair_plot(
         output_path=output_dir / "token_usage_total.png",
@@ -455,6 +494,7 @@ def _plot_token_usage(output_dir: Path, metrics: list[QuestionRunMetrics]) -> No
 
 
 def _plot_citations(output_dir: Path, metrics: list[QuestionRunMetrics]) -> None:
+    logger.info("Plotting citations/evidence output_dir=%s", output_dir)
     labels = _question_labels(metrics)
     _bar_pair_plot(
         output_path=output_dir / "citations_and_evidence.png",
@@ -469,6 +509,7 @@ def _plot_citations(output_dir: Path, metrics: list[QuestionRunMetrics]) -> None
 
 
 def _plot_fact_check_statuses(output_dir: Path, metrics: list[QuestionRunMetrics]) -> None:
+    logger.info("Plotting fact check statuses output_dir=%s", output_dir)
     labels = _question_labels(metrics)
     statuses = ["supported", "weakly_supported", "unsupported"]
     x_positions = list(range(len(metrics)))
@@ -488,6 +529,7 @@ def _plot_fact_check_statuses(output_dir: Path, metrics: list[QuestionRunMetrics
     fig.tight_layout()
     fig.savefig(output_dir / "fact_check_statuses.png", dpi=160)
     plt.close(fig)
+    logger.info("Saved plot file=%s", output_dir / "fact_check_statuses.png")
 
 
 def _bar_pair_plot(
@@ -516,6 +558,7 @@ def _bar_pair_plot(
     fig.tight_layout()
     fig.savefig(output_path, dpi=160)
     plt.close(fig)
+    logger.info("Saved plot file=%s", output_path)
 
 
 def _question_labels(metrics: list[QuestionRunMetrics]) -> list[str]:
@@ -523,6 +566,7 @@ def _question_labels(metrics: list[QuestionRunMetrics]) -> list[str]:
 
 
 async def _ingest_data(embedder: OpenAIEmbedder, vector_store: PineconeVectorStore) -> None:
+    logger.info("Starting pre-experiment ingestion")
     print("\ningestion")
     start = time.perf_counter()
     ingestor = ResearchPaperIngestor(embedder=embedder, vector_store=vector_store, data_dir="data")
@@ -534,13 +578,28 @@ async def _ingest_data(embedder: OpenAIEmbedder, vector_store: PineconeVectorSto
     print(f"latency_seconds: {latency_seconds:.3f}")
     for file_result in result.files:
         print(f"  {file_result.path}: {file_result.chunk_count} chunks")
+    logger.info(
+        "Pre-experiment ingestion complete files=%s chunks=%s latency_seconds=%.3f",
+        len(result.files),
+        result.chunk_count,
+        latency_seconds,
+    )
 
 
 async def main() -> None:
     load_dotenv()
+    _configure_logging()
+    logger.info("Starting experiment runner")
 
     openai_settings = OpenAISettings.from_env()
     pinecone_settings = PineconeSettings.from_env()
+    logger.info(
+        "Loaded settings answer_model=%s embedding_model=%s pinecone_host=%s pinecone_index=%s",
+        openai_settings.openai_answer_model,
+        openai_settings.openai_embedding_model,
+        pinecone_settings.pinecone_host,
+        pinecone_settings.pinecone_index_name,
+    )
 
     _print_model_config(openai_settings)
     print(f"pinecone_index: {pinecone_settings.pinecone_index_name}")
@@ -556,7 +615,9 @@ async def main() -> None:
 
     experiments: list[ExperimentFn] = [experiment1, experiment2, experiment3]
     for experiment in experiments:
+        logger.info("Dispatching experiment function=%s", experiment.__name__)
         await experiment(baseline_agent, retriever, openai_settings)
+    logger.info("Experiment runner complete")
 
 
 if __name__ == "__main__":

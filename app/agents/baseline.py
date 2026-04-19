@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 
 from app.llm_client import LLMClient
 from app.models.answer import TokenUsage
 from app.retriever import ResearchPaperRetriever, RetrievedChunk
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -29,9 +32,17 @@ class BaselineAgent:
         self.llm_client = llm_client
 
     async def answer(self, question: str, top_k: int = 5) -> BaselineAgentResult:
+        logger.info("Baseline agent answering question_chars=%s top_k=%s", len(question), top_k)
         chunks = await self.retriever.retrieve(question, top_k=top_k)
+        logger.info("Baseline agent retrieved chunks=%s", len(chunks))
         prompt = _build_prompt(question, chunks)
         completion = await self.llm_client.complete(prompt)
+        logger.info(
+            "Baseline agent completed answer_chars=%s total_tokens=%s citations=%s",
+            len(completion.text),
+            completion.token_usage.total_tokens,
+            len(chunks),
+        )
 
         return BaselineAgentResult(
             answer=completion.text,

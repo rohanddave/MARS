@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import re
 from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass, field
@@ -8,6 +9,8 @@ from typing import Any, Literal
 from app.llm_client import LLMClient
 from app.models.answer import TokenUsage
 from app.retriever import ResearchPaperRetriever, RetrievedChunk
+
+logger = logging.getLogger(__name__)
 
 ClaimStatus = Literal["supported", "weakly_supported", "unsupported"]
 
@@ -84,17 +87,33 @@ class OrchestratorAgent:
         self.final_synthesis_agent = final_synthesis_agent
 
     async def answer(self, query: str, top_k: int = 5) -> MultiAgentAnswer:
+        logger.info("Orchestrator starting query_chars=%s top_k=%s", len(query), top_k)
         plan, planning_usage = await self.plan(query)
+        logger.info(
+            "Orchestrator plan query_type=%s subquestions=%s use_web=%s",
+            plan.query_type,
+            len(plan.subquestions),
+            plan.use_web,
+        )
         evidence, search_usage = await self.search_agent.search(query, plan, top_k=top_k)
+        logger.info("Orchestrator search complete evidence=%s", len(evidence))
         evidence_notes, summary_usage = await self.summarization_agent.summarize(evidence)
+        logger.info("Orchestrator summarization complete notes=%s", len(evidence_notes))
         draft_answer, draft_usage = await self.final_synthesis_agent.write_answer(
             query=query,
             evidence_notes=evidence_notes,
             fact_check=None,
         )
+        logger.info("Orchestrator draft synthesis complete answer_chars=%s", len(draft_answer))
         fact_check, fact_usage = await self.fact_checking_agent.check(draft_answer, evidence_notes)
+        logger.info(
+            "Orchestrator fact check complete checks=%s needs_more_retrieval=%s",
+            len(fact_check.checks),
+            fact_check.needs_more_retrieval,
+        )
 
         if fact_check.needs_more_retrieval and fact_check.suggested_queries:
+            logger.info("Orchestrator running extra retrieval queries=%s", len(fact_check.suggested_queries))
             extra_evidence, extra_search_usage = await self.search_agent.search_queries(
                 fact_check.suggested_queries,
                 top_k=max(1, min(3, top_k)),
@@ -109,6 +128,7 @@ class OrchestratorAgent:
                 fact_check=fact_check,
             )
             fact_check, extra_fact_usage = await self.fact_checking_agent.check(draft_answer, evidence_notes)
+            logger.info("Orchestrator extra retrieval complete total_evidence=%s notes=%s", len(evidence), len(evidence_notes))
             token_usage = _sum_usage(
                 planning_usage,
                 search_usage,
@@ -128,6 +148,7 @@ class OrchestratorAgent:
             evidence_notes=evidence_notes,
             fact_check=fact_check,
         )
+        logger.info("Orchestrator final synthesis complete answer_chars=%s total_tokens=%s", len(final_answer), _sum_usage(token_usage, final_usage).total_tokens)
 
         return MultiAgentAnswer(
             answer=final_answer,
@@ -139,6 +160,7 @@ class OrchestratorAgent:
         )
 
     async def plan(self, query: str) -> tuple[QueryPlan, TokenUsage]:
+        logger.info("Planning query query_chars=%s", len(query))
         prompt = f"""Classify this research-paper QA query and make a short retrieval plan.
 
 Return plain text with these fields:
@@ -152,6 +174,7 @@ Query:
 """
         completion = await self.llm_client.complete(prompt)
         plan = _parse_plan(query, completion.text)
+        logger.info("Planning complete query_type=%s subquestions=%s", plan.query_type, len(plan.subquestions))
         return plan, completion.token_usage
 
 
@@ -167,11 +190,15 @@ class SearchAgent:
         self.web_retriever = web_retriever
 
     async def search(self, query: str, plan: QueryPlan, top_k: int = 5) -> tuple[list[Evidence], TokenUsage]:
+        logger.info("Search agent starting top_k=%s plan_subquestions=%s", top_k, len(plan.subquestions))
         search_queries, usage = await self.generate_search_queries(query, plan)
+        logger.info("Search agent generated queries=%s", len(search_queries))
         evidence, _ = await self.search_queries(search_queries, top_k=top_k, use_web=plan.use_web)
+        logger.info("Search agent complete evidence=%s", len(evidence))
         return evidence, usage
 
     async def generate_search_queries(self, query: str, plan: QueryPlan) -> tuple[list[str], TokenUsage]:
+        logger.info("Generating search queries query_chars=%s subquestions=%s", len(query), len(plan.subquestions))
         prompt = f"""Generate concise semantic search queries for retrieving evidence from research papers.
 Return one query per line. Avoid numbering.
 
@@ -185,16 +212,23 @@ Subquestions:
         queries = _parse_lines(completion.text)
         if not queries or _looks_unconfigured(completion.text):
             queries = [query, *plan.subquestions]
-        return _dedupe_strings(queries), completion.token_usage
+        queries = _dedupe_strings(queries)
+        logger.info("Generated search queries count=%s", len(queries))
+        return queries, completion.token_usage
 
     async def search_queries(self, queries: list[str], top_k: int = 5, use_web: bool = False) -> tuple[list[Evidence], TokenUsage]:
+        logger.info("Searching queries count=%s top_k=%s use_web=%s", len(queries), top_k, use_web)
         evidence: list[Evidence] = []
         for query in queries:
+            logger.info("Searching corpus query_chars=%s", len(query))
             chunks = await self.retriever.retrieve(query, top_k=top_k)
             if use_web and self.web_retriever is not None:
+                logger.info("Searching web query_chars=%s top_k=%s", len(query), top_k)
                 chunks = [*chunks, *await self.web_retriever(query, top_k)]
             evidence.extend(_chunks_to_evidence(query, chunks))
-        return self.rank_evidence(_dedupe_evidence(evidence)), TokenUsage()
+        ranked = self.rank_evidence(_dedupe_evidence(evidence))
+        logger.info("Search queries complete raw_evidence=%s ranked_evidence=%s", len(evidence), len(ranked))
+        return ranked, TokenUsage()
 
     def rank_evidence(self, evidence: list[Evidence]) -> list[Evidence]:
         return sorted(evidence, key=lambda item: item.score if item.score is not None else -1.0, reverse=True)
@@ -205,10 +239,12 @@ class SummarizationAgent:
         self.llm_client = llm_client
 
     async def summarize(self, evidence: list[Evidence]) -> tuple[list[EvidenceNote], TokenUsage]:
+        logger.info("Summarization agent starting evidence=%s", len(evidence))
         notes: list[EvidenceNote] = []
         total_usage = TokenUsage()
 
         for item in evidence:
+            logger.debug("Summarizing evidence citation_id=%s source=%s text_chars=%s", item.citation_id, item.source, len(item.text))
             prompt = f"""Create a short evidence note for this source.
 
 Extract:
@@ -227,6 +263,7 @@ Text:
             total_usage = _sum_usage(total_usage, completion.token_usage)
             notes.append(_build_evidence_note(item, completion.text))
 
+        logger.info("Summarization agent complete notes=%s total_tokens=%s", len(notes), total_usage.total_tokens)
         return notes, total_usage
 
 
@@ -235,6 +272,7 @@ class FactCheckingAgent:
         self.llm_client = llm_client
 
     async def check(self, draft_answer: str, evidence_notes: list[EvidenceNote]) -> tuple[FactCheckReport, TokenUsage]:
+        logger.info("Fact checking draft answer_chars=%s evidence_notes=%s", len(draft_answer), len(evidence_notes))
         prompt = f"""Inspect this draft answer claim by claim against the evidence notes.
 
 For each important claim, mark it supported, weakly_supported, or unsupported.
@@ -247,7 +285,14 @@ Evidence notes:
 {_format_notes(evidence_notes)}
 """
         completion = await self.llm_client.complete(prompt)
-        return _build_fact_check_report(draft_answer, evidence_notes, completion.text), completion.token_usage
+        report = _build_fact_check_report(draft_answer, evidence_notes, completion.text)
+        logger.info(
+            "Fact check complete checks=%s needs_more_retrieval=%s suggested_queries=%s",
+            len(report.checks),
+            report.needs_more_retrieval,
+            len(report.suggested_queries),
+        )
+        return report, completion.token_usage
 
 
 class FinalSynthesisAgent:
@@ -260,6 +305,12 @@ class FinalSynthesisAgent:
         evidence_notes: list[EvidenceNote],
         fact_check: FactCheckReport | None,
     ) -> tuple[str, TokenUsage]:
+        logger.info(
+            "Final synthesis starting query_chars=%s evidence_notes=%s has_fact_check=%s",
+            len(query),
+            len(evidence_notes),
+            fact_check is not None,
+        )
         prompt = f"""Write a clean final answer to the question using the evidence notes.
 
 Requirements:
@@ -280,6 +331,7 @@ Fact check feedback:
 Final answer:
 """
         completion = await self.llm_client.complete(prompt)
+        logger.info("Final synthesis complete answer_chars=%s total_tokens=%s", len(completion.text), completion.token_usage.total_tokens)
         return completion.text, completion.token_usage
 
 

@@ -573,11 +573,13 @@ async def _ingest_data(embedder: OpenAIEmbedder, vector_store: PineconeVectorSto
     result = await ingestor.ingest()
     latency_seconds = time.perf_counter() - start
 
-    print(f"files_indexed: {len(result.files)}")
-    print(f"chunks_indexed: {result.chunk_count}")
+    print(f"files_seen: {len(result.files)}")
+    print(f"new_chunks_indexed: {result.chunk_count}")
+    print(f"files_skipped: {result.skipped_file_count}")
     print(f"latency_seconds: {latency_seconds:.3f}")
     for file_result in result.files:
-        print(f"  {file_result.path}: {file_result.chunk_count} chunks")
+        status = "skipped" if file_result.skipped else "indexed"
+        print(f"  {file_result.path}: {file_result.chunk_count} chunks ({status})")
     logger.info(
         "Pre-experiment ingestion complete files=%s chunks=%s latency_seconds=%.3f",
         len(result.files),

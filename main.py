@@ -36,9 +36,9 @@ from app.vector_store import PineconeVectorStore
 logger = logging.getLogger(__name__)
 
 QUESTIONS = [
-    "What is the main contribution of the research paper?",
-    "What methods does the paper use, and what are the most important results?",
-    "What limitations or open problems does the paper identify?",
+  "What is REALM and how does it differ from traditional language models like BERT in terms of knowledge storage and retrieval?",
+  "Explain how the retrieve-then-predict framework works in REALM, including the role of the latent variable z and backpropagation through the retriever.",
+  "What evidence does the paper provide that REALM improves Open-domain Question Answering performance compared to methods like ORQA, and what are the key reasons for this improvement?"
 ]
 RESULTS_DIR = Path("res")
 
@@ -565,6 +565,249 @@ def _question_labels(metrics: list[QuestionRunMetrics]) -> list[str]:
     return [f"Q{metric.question_index}" for metric in metrics]
 
 
+def _save_summary_results() -> None:
+    logger.info("Generating cross-experiment summary from persisted metrics")
+    experiment_metrics = _load_persisted_experiment_metrics()
+    if not experiment_metrics:
+        logger.warning("No experiment metrics found; skipping summary generation")
+        return
+
+    output_dir = RESULTS_DIR / "summary"
+    if output_dir.exists():
+        logger.info("Removing existing summary directory path=%s", output_dir)
+        shutil.rmtree(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    rows = [_summarize_experiment(slug, payload) for slug, payload in experiment_metrics]
+    _write_summary_json(output_dir, rows)
+    _write_summary_markdown(output_dir, rows)
+    _plot_summary_latency(output_dir, rows)
+    _plot_summary_token_usage(output_dir, rows)
+    _plot_summary_citations(output_dir, rows)
+    _plot_summary_fact_checks(output_dir, rows)
+    logger.info("Summary results saved output_dir=%s experiments=%s", output_dir, len(rows))
+
+
+def _load_persisted_experiment_metrics() -> list[tuple[str, dict[str, object]]]:
+    metrics: list[tuple[str, dict[str, object]]] = []
+    if not RESULTS_DIR.exists():
+        return metrics
+
+    for metrics_path in sorted(RESULTS_DIR.glob("experiment*/metrics.json")):
+        try:
+            payload = json.loads(metrics_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            logger.warning("Skipping invalid metrics file path=%s", metrics_path)
+            continue
+        if not isinstance(payload, dict):
+            logger.warning("Skipping metrics file with invalid shape path=%s", metrics_path)
+            continue
+        metrics.append((metrics_path.parent.name, payload))
+    return metrics
+
+
+def _summarize_experiment(slug: str, payload: dict[str, object]) -> dict[str, object]:
+    config = payload.get("config")
+    questions = payload.get("questions")
+    if not isinstance(config, dict):
+        config = {}
+    if not isinstance(questions, list):
+        questions = []
+
+    baseline_latencies = [_float_from_question(question, "baseline_latency_seconds") for question in questions]
+    orchestrator_latencies = [_float_from_question(question, "orchestrator_latency_seconds") for question in questions]
+    baseline_tokens = [_token_total_from_question(question, "baseline_token_usage") for question in questions]
+    orchestrator_tokens = [_token_total_from_question(question, "orchestrator_token_usage") for question in questions]
+    baseline_citations = [_int_from_question(question, "baseline_citation_count") for question in questions]
+    orchestrator_evidence = [_int_from_question(question, "orchestrator_evidence_count") for question in questions]
+    fact_counts = _sum_fact_check_counts(questions)
+
+    return {
+        "slug": slug,
+        "name": str(config.get("name", slug)),
+        "top_k": _optional_int(config.get("top_k")) or 0,
+        "orchestrator_model": str(config.get("orchestrator_model", "")),
+        "search_model": str(config.get("search_model", "")),
+        "summarization_model": str(config.get("summarization_model", "")),
+        "fact_check_model": str(config.get("fact_check_model", "")),
+        "final_synthesis_model": str(config.get("final_synthesis_model", "")),
+        "question_count": len(questions),
+        "avg_baseline_latency_seconds": _avg(baseline_latencies),
+        "avg_orchestrator_latency_seconds": _avg(orchestrator_latencies),
+        "avg_baseline_total_tokens": _avg(baseline_tokens),
+        "avg_orchestrator_total_tokens": _avg(orchestrator_tokens),
+        "avg_baseline_citation_count": _avg(baseline_citations),
+        "avg_orchestrator_evidence_count": _avg(orchestrator_evidence),
+        "fact_check_status_counts": fact_counts,
+        "avg_supported_claims": fact_counts.get("supported", 0) / len(questions) if questions else 0.0,
+        "avg_weakly_supported_claims": fact_counts.get("weakly_supported", 0) / len(questions) if questions else 0.0,
+        "avg_unsupported_claims": fact_counts.get("unsupported", 0) / len(questions) if questions else 0.0,
+    }
+
+
+def _write_summary_json(output_dir: Path, rows: list[dict[str, object]]) -> None:
+    path = output_dir / "summary_metrics.json"
+    path.write_text(json.dumps({"experiments": rows}, indent=2), encoding="utf-8")
+    logger.info("Wrote summary metrics file=%s", path)
+
+
+def _write_summary_markdown(output_dir: Path, rows: list[dict[str, object]]) -> None:
+    lines = [
+        "# Cross-Experiment Summary",
+        "",
+        "This summary is generated from the persisted `metrics.json` files in each experiment folder.",
+        "",
+        "| Experiment | top_k | Avg Baseline Latency | Avg Multi-Agent Latency | Avg Baseline Tokens | Avg Multi-Agent Tokens | Avg Baseline Citations | Avg Multi-Agent Evidence | Unsupported Claims/Q |",
+        "|---|---:|---:|---:|---:|---:|---:|---:|---:|",
+    ]
+    for row in rows:
+        lines.append(
+            "| {name} | {top_k} | {baseline_latency:.3f}s | {orchestrator_latency:.3f}s | {baseline_tokens:.1f} | {orchestrator_tokens:.1f} | {baseline_citations:.1f} | {orchestrator_evidence:.1f} | {unsupported:.2f} |".format(
+                name=row["name"],
+                top_k=row["top_k"],
+                baseline_latency=row["avg_baseline_latency_seconds"],
+                orchestrator_latency=row["avg_orchestrator_latency_seconds"],
+                baseline_tokens=row["avg_baseline_total_tokens"],
+                orchestrator_tokens=row["avg_orchestrator_total_tokens"],
+                baseline_citations=row["avg_baseline_citation_count"],
+                orchestrator_evidence=row["avg_orchestrator_evidence_count"],
+                unsupported=row["avg_unsupported_claims"],
+            )
+        )
+
+    lines.extend(["", "## Model Configurations", ""])
+    for row in rows:
+        lines.extend(
+            [
+                f"### {row['name']}",
+                "",
+                f"- orchestrator_model: {row['orchestrator_model']}",
+                f"- search_model: {row['search_model']}",
+                f"- summarization_model: {row['summarization_model']}",
+                f"- fact_check_model: {row['fact_check_model']}",
+                f"- final_synthesis_model: {row['final_synthesis_model']}",
+                "",
+            ]
+        )
+
+    path = output_dir / "summary.md"
+    path.write_text("\n".join(lines), encoding="utf-8")
+    logger.info("Wrote summary markdown file=%s", path)
+
+
+def _plot_summary_latency(output_dir: Path, rows: list[dict[str, object]]) -> None:
+    _bar_pair_plot(
+        output_path=output_dir / "avg_latency_seconds.png",
+        title="Average Latency Across Experiments",
+        ylabel="seconds",
+        labels=_summary_labels(rows),
+        baseline_values=[float(row["avg_baseline_latency_seconds"]) for row in rows],
+        orchestrator_values=[float(row["avg_orchestrator_latency_seconds"]) for row in rows],
+    )
+
+
+def _plot_summary_token_usage(output_dir: Path, rows: list[dict[str, object]]) -> None:
+    _bar_pair_plot(
+        output_path=output_dir / "avg_token_usage_total.png",
+        title="Average Token Usage Across Experiments",
+        ylabel="tokens",
+        labels=_summary_labels(rows),
+        baseline_values=[float(row["avg_baseline_total_tokens"]) for row in rows],
+        orchestrator_values=[float(row["avg_orchestrator_total_tokens"]) for row in rows],
+    )
+
+
+def _plot_summary_citations(output_dir: Path, rows: list[dict[str, object]]) -> None:
+    _bar_pair_plot(
+        output_path=output_dir / "avg_citations_and_evidence.png",
+        title="Average Citations and Evidence Across Experiments",
+        ylabel="count",
+        labels=_summary_labels(rows),
+        baseline_values=[float(row["avg_baseline_citation_count"]) for row in rows],
+        orchestrator_values=[float(row["avg_orchestrator_evidence_count"]) for row in rows],
+        baseline_label="baseline citations",
+        orchestrator_label="orchestrator evidence",
+    )
+
+
+def _plot_summary_fact_checks(output_dir: Path, rows: list[dict[str, object]]) -> None:
+    labels = _summary_labels(rows)
+    statuses = ["supported", "weakly_supported", "unsupported"]
+    x_positions = list(range(len(rows)))
+    bottoms = [0.0 for _ in rows]
+
+    fig, ax = plt.subplots(figsize=(9, 4.8))
+    for status in statuses:
+        values = [float(row.get(f"avg_{status}_claims", 0.0)) for row in rows]
+        ax.bar(x_positions, values, bottom=bottoms, label=status)
+        bottoms = [bottom + value for bottom, value in zip(bottoms, values)]
+
+    ax.set_title("Average Fact Check Status Counts Across Experiments")
+    ax.set_ylabel("claims per question")
+    ax.set_xticks(x_positions)
+    ax.set_xticklabels(labels)
+    ax.legend()
+    fig.tight_layout()
+    fig.savefig(output_dir / "avg_fact_check_statuses.png", dpi=160)
+    plt.close(fig)
+    logger.info("Saved summary plot file=%s", output_dir / "avg_fact_check_statuses.png")
+
+
+def _summary_labels(rows: list[dict[str, object]]) -> list[str]:
+    return [f"E{index}" for index, _ in enumerate(rows, start=1)]
+
+
+def _float_from_question(question: object, key: str) -> float:
+    if not isinstance(question, dict):
+        return 0.0
+    value = question.get(key)
+    if isinstance(value, bool):
+        return 0.0
+    if isinstance(value, (int, float)):
+        return float(value)
+    return 0.0
+
+
+def _int_from_question(question: object, key: str) -> int:
+    if not isinstance(question, dict):
+        return 0
+    return _optional_int(question.get(key)) or 0
+
+
+def _token_total_from_question(question: object, key: str) -> int:
+    if not isinstance(question, dict):
+        return 0
+    token_usage = question.get(key)
+    if not isinstance(token_usage, dict):
+        return 0
+    return _optional_int(token_usage.get("total_tokens")) or 0
+
+
+def _sum_fact_check_counts(questions: list[object]) -> dict[str, int]:
+    totals = {"supported": 0, "weakly_supported": 0, "unsupported": 0}
+    for question in questions:
+        if not isinstance(question, dict):
+            continue
+        counts = question.get("fact_check_status_counts")
+        if not isinstance(counts, dict):
+            continue
+        for status in totals:
+            totals[status] += _optional_int(counts.get(status)) or 0
+    return totals
+
+
+def _avg(values: list[float | int]) -> float:
+    return sum(values) / len(values) if values else 0.0
+
+
+def _optional_int(value: object) -> int | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return value
+    return None
+
+
 async def _ingest_data(embedder: OpenAIEmbedder, vector_store: PineconeVectorStore) -> None:
     logger.info("Starting pre-experiment ingestion")
     print("\ningestion")
@@ -616,9 +859,10 @@ async def main() -> None:
     baseline_agent = build_baseline_agent(retriever, openai_settings)
 
     experiments: list[ExperimentFn] = [experiment1, experiment2, experiment3]
-    for experiment in experiments:
-        logger.info("Dispatching experiment function=%s", experiment.__name__)
-        await experiment(baseline_agent, retriever, openai_settings)
+    # for experiment in experiments:
+    #     logger.info("Dispatching experiment function=%s", experiment.__name__)
+    #     await experiment(baseline_agent, retriever, openai_settings)
+    _save_summary_results()
     logger.info("Experiment runner complete")
 
 

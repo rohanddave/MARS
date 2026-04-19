@@ -328,12 +328,21 @@ class FinalSynthesisAgent:
 Requirements:
 - Every factual sentence must include at least one evidence citation like [E1] or [E2].
 - Do not place citations only at the end of a paragraph; cite each factual sentence individually.
+- Put the citation immediately after the specific factual claim it supports.
+- Avoid citation dumps like [E1][E2][E3] unless every cited source directly supports that exact sentence.
+- Prefer one or two precise citations per factual sentence over many broad citations.
 - If no evidence supports a sentence, remove it or state the uncertainty with a citation to the closest relevant evidence.
 - Include uncertainty when evidence is weak, missing, or conflicting.
 - Do not use facts that are not supported by the evidence notes.
 - If the evidence is insufficient, say what is missing.
 - Do not invent evidence references. Only cite IDs that appear in the evidence notes.
 - Avoid broad comparative or causal claims unless directly supported by cited evidence.
+
+Citation discipline examples:
+- Good: REALM uses a learned textual retriever to retrieve documents before prediction [E2].
+- Bad: REALM uses retrieval and improves QA. [E2][E5]
+- Good: The provided evidence does not include a direct ORQA comparison, so that comparison cannot be verified from these notes [E4].
+- Bad: REALM outperforms ORQA because retrieval improves QA [E1][E2][E3].
 
 Question:
 {query}

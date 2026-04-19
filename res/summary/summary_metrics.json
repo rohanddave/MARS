@@ -1,0 +1,79 @@
+{
+  "experiments": [
+    {
+      "slug": "experiment1_balanced",
+      "name": "experiment1: balanced multi-agent config",
+      "top_k": 5,
+      "orchestrator_model": "gpt-4.1-mini",
+      "search_model": "gpt-4.1-mini",
+      "summarization_model": "gpt-4.1-mini",
+      "fact_check_model": "gpt-4.1-mini",
+      "final_synthesis_model": "gpt-4.1-mini",
+      "question_count": 3,
+      "avg_baseline_latency_seconds": 3.7763753890000036,
+      "avg_orchestrator_latency_seconds": 48.824066666666674,
+      "avg_baseline_total_tokens": 1714.3333333333333,
+      "avg_orchestrator_total_tokens": 18228.0,
+      "avg_baseline_citation_count": 5.0,
+      "avg_orchestrator_evidence_count": 12.333333333333334,
+      "fact_check_status_counts": {
+        "supported": 7,
+        "weakly_supported": 21,
+        "unsupported": 0
+      },
+      "avg_supported_claims": 2.3333333333333335,
+      "avg_weakly_supported_claims": 7.0,
+      "avg_unsupported_claims": 0.0
+    },
+    {
+      "slug": "experiment2_fast_same_model",
+      "name": "experiment2: fast same-model config",
+      "top_k": 3,
+      "orchestrator_model": "gpt-4.1-mini",
+      "search_model": "gpt-4.1-mini",
+      "summarization_model": "gpt-4.1-mini",
+      "fact_check_model": "gpt-4.1-mini",
+      "final_synthesis_model": "gpt-4.1-mini",
+      "question_count": 3,
+      "avg_baseline_latency_seconds": 4.8601202359999816,
+      "avg_orchestrator_latency_seconds": 36.976718319000014,
+      "avg_baseline_total_tokens": 1173.6666666666667,
+      "avg_orchestrator_total_tokens": 12301.333333333334,
+      "avg_baseline_citation_count": 3.0,
+      "avg_orchestrator_evidence_count": 8.0,
+      "fact_check_status_counts": {
+        "supported": 8,
+        "weakly_supported": 20,
+        "unsupported": 0
+      },
+      "avg_supported_claims": 2.6666666666666665,
+      "avg_weakly_supported_claims": 6.666666666666667,
+      "avg_unsupported_claims": 0.0
+    },
+    {
+      "slug": "experiment3_strong_verifier_synthesizer",
+      "name": "experiment3: strong verifier and synthesizer config",
+      "top_k": 8,
+      "orchestrator_model": "gpt-4.1-mini",
+      "search_model": "gpt-4.1-mini",
+      "summarization_model": "gpt-4.1-mini",
+      "fact_check_model": "gpt-4.1-mini",
+      "final_synthesis_model": "gpt-4.1-mini",
+      "question_count": 3,
+      "avg_baseline_latency_seconds": 5.340312347333319,
+      "avg_orchestrator_latency_seconds": 61.490806471999996,
+      "avg_baseline_total_tokens": 2247.0,
+      "avg_orchestrator_total_tokens": 27063.0,
+      "avg_baseline_citation_count": 8.0,
+      "avg_orchestrator_evidence_count": 20.0,
+      "fact_check_status_counts": {
+        "supported": 3,
+        "weakly_supported": 28,
+        "unsupported": 0
+      },
+      "avg_supported_claims": 1.0,
+      "avg_weakly_supported_claims": 9.333333333333334,
+      "avg_unsupported_claims": 0.0
+    }
+  ]
+}

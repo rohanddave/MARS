@@ -54,6 +54,7 @@ class ResearchPaperIngestor:
         batch_size: int = 25,
         pdf_reader: PDFTextReader | None = None,
         manifest_path: str | Path | None = None,
+        chunk_cache_dir: str | Path | None = None,
     ) -> None:
         if chunk_size_chars <= 0:
             raise ValueError("chunk_size_chars must be greater than 0")
@@ -72,6 +73,7 @@ class ResearchPaperIngestor:
         self.batch_size = batch_size
         self.pdf_reader = pdf_reader or PDFTextReader()
         self.manifest_path = Path(manifest_path) if manifest_path is not None else self.data_dir / ".ingestion_manifest.json"
+        self.chunk_cache_dir = Path(chunk_cache_dir) if chunk_cache_dir is not None else self.data_dir / ".embedding_cache"
 
     async def ingest(self) -> IngestionResult:
         logger.info(
@@ -124,6 +126,7 @@ class ResearchPaperIngestor:
             logger.info("Chunked file path=%s text_chars=%s chunks=%s", file_path, len(text), len(chunks))
             file_records: list[EmbeddingRecord] = []
             for chunk_number, chunk in enumerate(chunks, start=1):
+                cache_key = self._chunk_cache_key(chunk.text)
                 logger.info(
                     "Embedding chunk file=%s/%s path=%s chunk=%s/%s chunk_chars=%s elapsed_seconds=%.1f",
                     file_number,
@@ -134,7 +137,20 @@ class ResearchPaperIngestor:
                     len(chunk.text),
                     time.perf_counter() - ingestion_started_at,
                 )
-                embedding = await self.embedder.embed(chunk.text)
+                embedding = self._load_cached_embedding(cache_key)
+                if embedding is None:
+                    embedding = await self.embedder.embed(chunk.text)
+                    self._save_cached_embedding(cache_key, embedding)
+                else:
+                    logger.info(
+                        "Using cached embedding file=%s/%s path=%s chunk=%s/%s vector_dimensions=%s",
+                        file_number,
+                        len(files),
+                        file_path,
+                        chunk_number,
+                        len(chunks),
+                        len(embedding),
+                    )
                 logger.info(
                     "Embedded chunk file=%s/%s path=%s chunk=%s/%s vector_dimensions=%s",
                     file_number,
@@ -243,6 +259,56 @@ class ResearchPaperIngestor:
         except ValueError:
             return file_path.as_posix()
 
+    def _chunk_cache_key(self, text: str) -> str:
+        settings = self.embedder.llm_client.settings
+        raw_key = "\n".join(
+            [
+                settings.openai_embedding_model,
+                str(settings.openai_embedding_dimensions),
+                hashlib.sha256(text.encode("utf-8")).hexdigest(),
+            ]
+        )
+        return hashlib.sha256(raw_key.encode("utf-8")).hexdigest()
+
+    def _chunk_cache_path(self, cache_key: str) -> Path:
+        return self.chunk_cache_dir / f"{cache_key}.json"
+
+    def _load_cached_embedding(self, cache_key: str) -> list[float] | None:
+        cache_path = self._chunk_cache_path(cache_key)
+        if not cache_path.exists():
+            return None
+
+        try:
+            payload = json.loads(cache_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            logger.warning("Ignoring invalid embedding cache file path=%s", cache_path)
+            return None
+
+        embedding = payload.get("embedding") if isinstance(payload, dict) else None
+        if not isinstance(embedding, list):
+            logger.warning("Ignoring embedding cache with missing vector path=%s", cache_path)
+            return None
+        if not all(isinstance(value, (int, float)) and not isinstance(value, bool) for value in embedding):
+            logger.warning("Ignoring embedding cache with non-numeric vector path=%s", cache_path)
+            return None
+
+        logger.info("Loaded cached embedding cache_key=%s vector_dimensions=%s", cache_key, len(embedding))
+        return [float(value) for value in embedding]
+
+    def _save_cached_embedding(self, cache_key: str, embedding: list[float]) -> None:
+        self.chunk_cache_dir.mkdir(parents=True, exist_ok=True)
+        cache_path = self._chunk_cache_path(cache_key)
+        tmp_path = cache_path.with_suffix(".json.tmp")
+        settings = self.embedder.llm_client.settings
+        payload = {
+            "embedding_model": settings.openai_embedding_model,
+            "embedding_dimensions": settings.openai_embedding_dimensions,
+            "embedding": embedding,
+        }
+        tmp_path.write_text(json.dumps(payload), encoding="utf-8")
+        tmp_path.replace(cache_path)
+        logger.info("Saved cached embedding cache_key=%s vector_dimensions=%s", cache_key, len(embedding))
+
     def _chunk_text(self, text: str) -> list[TextChunk]:
         chunks: list[TextChunk] = []
         start = 0
@@ -300,3 +366,19 @@ def _record_id(file_path: Path, chunk: TextChunk) -> str:
     raw_id = f"{file_path.as_posix()}:{chunk.chunk_index}:{chunk.text}".encode("utf-8")
     digest = hashlib.sha256(raw_id).hexdigest()[:24]
     return f"{file_path.stem}-{chunk.chunk_index}-{digest}"
+
+
+def _file_fingerprint(file_path: Path) -> str:
+    digest = hashlib.sha256()
+    with file_path.open("rb") as source:
+        for block in iter(lambda: source.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def _optional_int(value: Any) -> int | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return value
+    return None

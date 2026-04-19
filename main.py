@@ -392,7 +392,7 @@ def _print_model_config(settings: OpenAISettings) -> None:
     print(f"  fact_check: {_model_for('fact_check', default_model)}")
     print(f"  final_synthesis: {_model_for('final_synthesis', default_model)}")
     print(f"  fast_agent: {os.getenv('FAST_AGENT_MODEL', default_model)}")
-    print(f"  strong_agent: {os.getenv('STRONG_AGENT_MODEL', default_model)}")
+    print(f"  strong_agent: {os.getenv('STRONG_AGENT_MODEL', "gpt-4.1")}")
     print(f"  judge: {os.getenv('JUDGE_MODEL', 'gpt-5.1')}")
     print(f"  embedding: {settings.openai_embedding_model}")
 

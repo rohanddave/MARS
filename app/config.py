@@ -12,7 +12,7 @@ class OpenAISettings:
     openai_answer_max_output_tokens: int = 512
     openai_embedding_model: str = "text-embedding-3-small"
     openai_embedding_dimensions: int = 1536
-    openai_timeout_seconds: float = 30.0
+    openai_timeout_seconds: float = 120.0
 
     @classmethod
     def from_env(cls) -> "OpenAISettings":

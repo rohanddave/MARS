@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 from collections.abc import Mapping
 from dataclasses import dataclass
@@ -27,7 +28,7 @@ class ResearchPaperRetriever:
     async def retrieve(self, query: str, top_k: int = 5) -> list[RetrievedChunk]:
         logger.info("Retrieving chunks query_chars=%s top_k=%s", len(query), top_k)
         query_embedding = await self.embedder.embed(query)
-        records = self.vector_store.query(query_embedding, top_k=top_k)
+        records = await asyncio.to_thread(self.vector_store.query, query_embedding, top_k=top_k)
 
         chunks: list[RetrievedChunk] = []
         for record in records:

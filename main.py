@@ -34,6 +34,7 @@ from app.retriever import ResearchPaperRetriever
 from app.vector_store import PineconeVectorStore
 
 logger = logging.getLogger(__name__)
+_PRINT_LOCK: asyncio.Lock | None = None
 
 QUESTIONS = [
     "What external knowledge source or corpus does REALM retrieve from, and how is it used by the model?",  # easy lookup
@@ -78,8 +79,11 @@ RESULTS_DIR = Path("res")
 class AgentModelConfig:
     slug: str
     name: str
+    family: str
+    control_variable: str
     top_k: int
     max_evidence_chunks: int
+    baseline_model: str
     orchestrator_model: str
     search_model: str
     summarization_model: str
@@ -108,9 +112,6 @@ class QuestionRunMetrics:
     orchestrator_answer: str
 
 
-ExperimentFn = Callable[[BaselineAgent, ResearchPaperRetriever, OpenAISettings], Awaitable[None]]
-
-
 def _llm_client(settings: OpenAISettings, model: str | None = None) -> LLMClient:
     if model:
         settings = replace(settings, openai_answer_model=model)
@@ -120,6 +121,28 @@ def _llm_client(settings: OpenAISettings, model: str | None = None) -> LLMClient
 def _model_for(role: str, default_model: str) -> str:
     env_name = f"{role.upper()}_MODEL"
     return os.getenv(env_name, default_model)
+
+
+def _env_int(name: str, default: int, minimum: int = 1) -> int:
+    raw_value = os.getenv(name)
+    if raw_value is None or not raw_value.strip():
+        return default
+    try:
+        value = int(raw_value)
+    except ValueError:
+        logger.warning("Invalid integer env var %s=%r; using default=%s", name, raw_value, default)
+        return default
+    if value < minimum:
+        logger.warning("Env var %s=%s is below minimum=%s; using minimum", name, value, minimum)
+        return minimum
+    return value
+
+
+def _print_lock() -> asyncio.Lock:
+    global _PRINT_LOCK
+    if _PRINT_LOCK is None:
+        _PRINT_LOCK = asyncio.Lock()
+    return _PRINT_LOCK
 
 
 def _configure_logging() -> None:
@@ -134,8 +157,9 @@ def _configure_logging() -> None:
 def build_baseline_agent(
     retriever: ResearchPaperRetriever,
     settings: OpenAISettings,
+    model: str | None = None,
 ) -> BaselineAgent:
-    baseline_model = _model_for("baseline", settings.openai_answer_model)
+    baseline_model = model or _model_for("baseline", settings.openai_answer_model)
     logger.info("Building baseline agent model=%s", baseline_model)
     return BaselineAgent(retriever=retriever, llm_client=_llm_client(settings, baseline_model))
 
@@ -170,8 +194,6 @@ async def _measure(label: str, run: Callable[[], Awaitable[object]]) -> tuple[ob
     result = await run()
     latency_seconds = time.perf_counter() - start
     logger.info("Finished measured run label=%s latency_seconds=%.3f", label, latency_seconds)
-    print(f"\n--- {label} ---")
-    print(f"latency_seconds: {latency_seconds:.3f}")
     return result, latency_seconds
 
 
@@ -192,31 +214,36 @@ async def _compare_question(
         question_type,
         top_k,
     )
-    print(f"\n{'=' * 80}")
-    print(experiment_name)
-    print(f"question_type: {question_type}")
-    print(f"question: {question}")
-    print(f"top_k: {top_k}")
-
-    baseline_result, baseline_latency = await _measure(
-        "baseline",
-        lambda: baseline_agent.answer(question, top_k=top_k),
+    (baseline_result, baseline_latency), (orchestrator_result, orchestrator_latency) = await asyncio.gather(
+        _measure(
+            "baseline",
+            lambda: baseline_agent.answer(question, top_k=top_k),
+        ),
+        _measure(
+            "multi_agent_orchestrator",
+            lambda: orchestrator_agent.answer(question, top_k=top_k),
+        ),
     )
-    _print_baseline_result(baseline_result, baseline_latency)
 
-    orchestrator_result, orchestrator_latency = await _measure(
-        "multi_agent_orchestrator",
-        lambda: orchestrator_agent.answer(question, top_k=top_k),
-    )
-    _print_orchestrator_result(orchestrator_result, orchestrator_latency)
-
-    print("\ncomparison")
-    print(f"baseline_latency_seconds: {baseline_latency:.3f}")
-    print(f"orchestrator_latency_seconds: {orchestrator_latency:.3f}")
-    print(f"baseline_total_tokens: {_total_tokens(baseline_result.token_usage)}")
-    print(f"orchestrator_total_tokens: {_total_tokens(orchestrator_result.token_usage)}")
-    print(f"baseline_citation_count: {len(baseline_result.citations)}")
-    print(f"orchestrator_evidence_count: {len(orchestrator_result.evidence)}")
+    async with _print_lock():
+        print(f"\n{'=' * 80}")
+        print(experiment_name)
+        print(f"question_type: {question_type}")
+        print(f"question: {question}")
+        print(f"top_k: {top_k}")
+        print("\n--- baseline ---")
+        print(f"latency_seconds: {baseline_latency:.3f}")
+        _print_baseline_result(baseline_result, baseline_latency)
+        print("\n--- multi_agent_orchestrator ---")
+        print(f"latency_seconds: {orchestrator_latency:.3f}")
+        _print_orchestrator_result(orchestrator_result, orchestrator_latency)
+        print("\ncomparison")
+        print(f"baseline_latency_seconds: {baseline_latency:.3f}")
+        print(f"orchestrator_latency_seconds: {orchestrator_latency:.3f}")
+        print(f"baseline_total_tokens: {_total_tokens(baseline_result.token_usage)}")
+        print(f"orchestrator_total_tokens: {_total_tokens(orchestrator_result.token_usage)}")
+        print(f"baseline_citation_count: {len(baseline_result.citations)}")
+        print(f"orchestrator_evidence_count: {len(orchestrator_result.evidence)}")
 
     status_counts = _fact_check_status_counts(orchestrator_result)
     logger.info(
@@ -249,7 +276,6 @@ async def _compare_question(
 
 async def _run_agent_config_experiment(
     config: AgentModelConfig,
-    baseline_agent: BaselineAgent,
     retriever: ResearchPaperRetriever,
     settings: OpenAISettings,
 ) -> None:
@@ -258,11 +284,22 @@ async def _run_agent_config_experiment(
     print(f"running {config.name}")
     _print_agent_config(config)
 
+    baseline_agent = build_baseline_agent(retriever, settings, config.baseline_model)
     orchestrator_agent = build_orchestrator_agent(retriever, settings, config)
-    metrics: list[QuestionRunMetrics] = []
-    for index, question in enumerate(QUESTIONS, start=1):
-        metrics.append(
-            await _compare_question(
+    question_concurrency = _env_int("QUESTION_CONCURRENCY", 3)
+    logger.info(
+        "Running experiment questions slug=%s question_count=%s question_concurrency=%s",
+        config.slug,
+        len(QUESTIONS),
+        question_concurrency,
+    )
+    print(f"question_concurrency: {question_concurrency}")
+    semaphore = asyncio.Semaphore(question_concurrency)
+
+    async def run_question(index: int, question: str) -> QuestionRunMetrics:
+        async with semaphore:
+            logger.info("Starting question task slug=%s question_index=%s", config.slug, index)
+            result = await _compare_question(
                 config=config,
                 experiment_name=f"{config.name}: question {index}",
                 question_index=index,
@@ -272,7 +309,15 @@ async def _run_agent_config_experiment(
                 orchestrator_agent=orchestrator_agent,
                 top_k=config.top_k,
             )
+            logger.info("Finished question task slug=%s question_index=%s", config.slug, index)
+            return result
+
+    metrics = list(
+        await asyncio.gather(
+            *(run_question(index, question) for index, question in enumerate(QUESTIONS, start=1))
         )
+    )
+    metrics.sort(key=lambda metric: metric.question_index)
 
     output_dir = _save_experiment_results(config, metrics)
     await _judge_experiment_results(output_dir, settings)
@@ -280,66 +325,393 @@ async def _run_agent_config_experiment(
     print(f"\nsaved_results: {output_dir}")
 
 
-async def experiment1(
-    baseline_agent: BaselineAgent,
-    retriever: ResearchPaperRetriever,
-    settings: OpenAISettings,
-) -> None:
-    default_model = settings.openai_answer_model
-    config = AgentModelConfig(
-        slug="experiment1_balanced",
-        name="experiment1: balanced evidence config",
-        top_k=5,
-        max_evidence_chunks=5,
-        orchestrator_model=_model_for("orchestrator", default_model),
-        search_model=_model_for("search", default_model),
-        summarization_model=_model_for("summarization", default_model),
-        fact_check_model=_model_for("fact_check", default_model),
-        final_synthesis_model=_model_for("final_synthesis", default_model),
+def _experiment_configs(settings: OpenAISettings) -> list[AgentModelConfig]:
+    small_model = os.getenv("FAST_AGENT_MODEL", settings.openai_answer_model)
+    strong_model = os.getenv("STRONG_AGENT_MODEL", settings.openai_answer_model)
+    configs = [
+        _make_config(
+            number=1,
+            setup_slug="architecture_control_top5",
+            name="architecture control, all small models, top_k=5",
+            family="architecture_control",
+            control_variable="agent_architecture",
+            top_k=5,
+            baseline_model=small_model,
+            orchestrator_model=small_model,
+            search_model=small_model,
+            summarization_model=small_model,
+            fact_check_model=small_model,
+            final_synthesis_model=small_model,
+        ),
+        _make_config(
+            number=2,
+            setup_slug="strong_orchestrator_top5",
+            name="model ablation, strong orchestrator only, top_k=5",
+            family="model_ablation",
+            control_variable="orchestrator_model",
+            top_k=5,
+            baseline_model=small_model,
+            orchestrator_model=strong_model,
+            search_model=small_model,
+            summarization_model=small_model,
+            fact_check_model=small_model,
+            final_synthesis_model=small_model,
+        ),
+        _make_config(
+            number=3,
+            setup_slug="strong_search_top5",
+            name="model ablation, strong search agent only, top_k=5",
+            family="model_ablation",
+            control_variable="search_model",
+            top_k=5,
+            baseline_model=small_model,
+            orchestrator_model=small_model,
+            search_model=strong_model,
+            summarization_model=small_model,
+            fact_check_model=small_model,
+            final_synthesis_model=small_model,
+        ),
+        _make_config(
+            number=4,
+            setup_slug="strong_summarizer_top5",
+            name="model ablation, strong summarizer only, top_k=5",
+            family="model_ablation",
+            control_variable="summarization_model",
+            top_k=5,
+            baseline_model=small_model,
+            orchestrator_model=small_model,
+            search_model=small_model,
+            summarization_model=strong_model,
+            fact_check_model=small_model,
+            final_synthesis_model=small_model,
+        ),
+        _make_config(
+            number=5,
+            setup_slug="strong_fact_checker_top5",
+            name="model ablation, strong fact checker only, top_k=5",
+            family="model_ablation",
+            control_variable="fact_check_model",
+            top_k=5,
+            baseline_model=small_model,
+            orchestrator_model=small_model,
+            search_model=small_model,
+            summarization_model=small_model,
+            fact_check_model=strong_model,
+            final_synthesis_model=small_model,
+        ),
+        _make_config(
+            number=6,
+            setup_slug="strong_synthesizer_top5",
+            name="model ablation, strong final synthesizer only, top_k=5",
+            family="model_ablation",
+            control_variable="final_synthesis_model",
+            top_k=5,
+            baseline_model=small_model,
+            orchestrator_model=small_model,
+            search_model=small_model,
+            summarization_model=small_model,
+            fact_check_model=small_model,
+            final_synthesis_model=strong_model,
+        ),
+        _make_config(
+            number=7,
+            setup_slug="strong_checker_synth_top5",
+            name="model interaction, strong checker and synthesizer, top_k=5",
+            family="model_interaction",
+            control_variable="fact_check_and_final_synthesis_models",
+            top_k=5,
+            baseline_model=small_model,
+            orchestrator_model=small_model,
+            search_model=small_model,
+            summarization_model=small_model,
+            fact_check_model=strong_model,
+            final_synthesis_model=strong_model,
+        ),
+        _make_config(
+            number=8,
+            setup_slug="all_strong_top5",
+            name="upper bound, all strong models, top_k=5",
+            family="model_upper_bound",
+            control_variable="all_agent_models",
+            top_k=5,
+            baseline_model=strong_model,
+            orchestrator_model=strong_model,
+            search_model=strong_model,
+            summarization_model=strong_model,
+            fact_check_model=strong_model,
+            final_synthesis_model=strong_model,
+        ),
+        _make_config(
+            number=9,
+            setup_slug="all_small_top3",
+            name="retrieval sweep, all small models, top_k=3",
+            family="top_k_sweep",
+            control_variable="top_k",
+            top_k=3,
+            baseline_model=small_model,
+            orchestrator_model=small_model,
+            search_model=small_model,
+            summarization_model=small_model,
+            fact_check_model=small_model,
+            final_synthesis_model=small_model,
+        ),
+        _make_config(
+            number=10,
+            setup_slug="all_small_top8",
+            name="retrieval sweep, all small models, top_k=8",
+            family="top_k_sweep",
+            control_variable="top_k",
+            top_k=8,
+            baseline_model=small_model,
+            orchestrator_model=small_model,
+            search_model=small_model,
+            summarization_model=small_model,
+            fact_check_model=small_model,
+            final_synthesis_model=small_model,
+        ),
+        _make_config(
+            number=11,
+            setup_slug="strong_checker_synth_top3",
+            name="retrieval sweep, strong checker and synthesizer, top_k=3",
+            family="top_k_sweep",
+            control_variable="top_k",
+            top_k=3,
+            baseline_model=small_model,
+            orchestrator_model=small_model,
+            search_model=small_model,
+            summarization_model=small_model,
+            fact_check_model=strong_model,
+            final_synthesis_model=strong_model,
+        ),
+        _make_config(
+            number=12,
+            setup_slug="strong_checker_synth_top8",
+            name="retrieval sweep, strong checker and synthesizer, top_k=8",
+            family="top_k_sweep",
+            control_variable="top_k",
+            top_k=8,
+            baseline_model=small_model,
+            orchestrator_model=small_model,
+            search_model=small_model,
+            summarization_model=small_model,
+            fact_check_model=strong_model,
+            final_synthesis_model=strong_model,
+        ),
+        _make_config(
+            number=13,
+            setup_slug="all_strong_top3",
+            name="retrieval sweep, all strong models, top_k=3",
+            family="top_k_sweep",
+            control_variable="top_k",
+            top_k=3,
+            baseline_model=strong_model,
+            orchestrator_model=strong_model,
+            search_model=strong_model,
+            summarization_model=strong_model,
+            fact_check_model=strong_model,
+            final_synthesis_model=strong_model,
+        ),
+        _make_config(
+            number=14,
+            setup_slug="all_strong_top8",
+            name="retrieval sweep, all strong models, top_k=8",
+            family="top_k_sweep",
+            control_variable="top_k",
+            top_k=8,
+            baseline_model=strong_model,
+            orchestrator_model=strong_model,
+            search_model=strong_model,
+            summarization_model=strong_model,
+            fact_check_model=strong_model,
+            final_synthesis_model=strong_model,
+        ),
+        _make_config(
+            number=15,
+            setup_slug="strong_orchestrator_top3",
+            name="retrieval sweep, strong orchestrator only, top_k=3",
+            family="top_k_sweep",
+            control_variable="top_k",
+            top_k=3,
+            baseline_model=small_model,
+            orchestrator_model=strong_model,
+            search_model=small_model,
+            summarization_model=small_model,
+            fact_check_model=small_model,
+            final_synthesis_model=small_model,
+        ),
+        _make_config(
+            number=16,
+            setup_slug="strong_orchestrator_top8",
+            name="retrieval sweep, strong orchestrator only, top_k=8",
+            family="top_k_sweep",
+            control_variable="top_k",
+            top_k=8,
+            baseline_model=small_model,
+            orchestrator_model=strong_model,
+            search_model=small_model,
+            summarization_model=small_model,
+            fact_check_model=small_model,
+            final_synthesis_model=small_model,
+        ),
+        _make_config(
+            number=17,
+            setup_slug="strong_search_top3",
+            name="retrieval sweep, strong search agent only, top_k=3",
+            family="top_k_sweep",
+            control_variable="top_k",
+            top_k=3,
+            baseline_model=small_model,
+            orchestrator_model=small_model,
+            search_model=strong_model,
+            summarization_model=small_model,
+            fact_check_model=small_model,
+            final_synthesis_model=small_model,
+        ),
+        _make_config(
+            number=18,
+            setup_slug="strong_search_top8",
+            name="retrieval sweep, strong search agent only, top_k=8",
+            family="top_k_sweep",
+            control_variable="top_k",
+            top_k=8,
+            baseline_model=small_model,
+            orchestrator_model=small_model,
+            search_model=strong_model,
+            summarization_model=small_model,
+            fact_check_model=small_model,
+            final_synthesis_model=small_model,
+        ),
+        _make_config(
+            number=19,
+            setup_slug="strong_summarizer_top3",
+            name="retrieval sweep, strong summarizer only, top_k=3",
+            family="top_k_sweep",
+            control_variable="top_k",
+            top_k=3,
+            baseline_model=small_model,
+            orchestrator_model=small_model,
+            search_model=small_model,
+            summarization_model=strong_model,
+            fact_check_model=small_model,
+            final_synthesis_model=small_model,
+        ),
+        _make_config(
+            number=20,
+            setup_slug="strong_summarizer_top8",
+            name="retrieval sweep, strong summarizer only, top_k=8",
+            family="top_k_sweep",
+            control_variable="top_k",
+            top_k=8,
+            baseline_model=small_model,
+            orchestrator_model=small_model,
+            search_model=small_model,
+            summarization_model=strong_model,
+            fact_check_model=small_model,
+            final_synthesis_model=small_model,
+        ),
+        _make_config(
+            number=21,
+            setup_slug="strong_fact_checker_top3",
+            name="retrieval sweep, strong fact checker only, top_k=3",
+            family="top_k_sweep",
+            control_variable="top_k",
+            top_k=3,
+            baseline_model=small_model,
+            orchestrator_model=small_model,
+            search_model=small_model,
+            summarization_model=small_model,
+            fact_check_model=strong_model,
+            final_synthesis_model=small_model,
+        ),
+        _make_config(
+            number=22,
+            setup_slug="strong_fact_checker_top8",
+            name="retrieval sweep, strong fact checker only, top_k=8",
+            family="top_k_sweep",
+            control_variable="top_k",
+            top_k=8,
+            baseline_model=small_model,
+            orchestrator_model=small_model,
+            search_model=small_model,
+            summarization_model=small_model,
+            fact_check_model=strong_model,
+            final_synthesis_model=small_model,
+        ),
+        _make_config(
+            number=23,
+            setup_slug="strong_synthesizer_top3",
+            name="retrieval sweep, strong final synthesizer only, top_k=3",
+            family="top_k_sweep",
+            control_variable="top_k",
+            top_k=3,
+            baseline_model=small_model,
+            orchestrator_model=small_model,
+            search_model=small_model,
+            summarization_model=small_model,
+            fact_check_model=small_model,
+            final_synthesis_model=strong_model,
+        ),
+        _make_config(
+            number=24,
+            setup_slug="strong_synthesizer_top8",
+            name="retrieval sweep, strong final synthesizer only, top_k=8",
+            family="top_k_sweep",
+            control_variable="top_k",
+            top_k=8,
+            baseline_model=small_model,
+            orchestrator_model=small_model,
+            search_model=small_model,
+            summarization_model=small_model,
+            fact_check_model=small_model,
+            final_synthesis_model=strong_model,
+        ),
+    ]
+    return configs
+
+
+def _filter_experiment_configs(configs: list[AgentModelConfig]) -> list[AgentModelConfig]:
+    selected = os.getenv("EXPERIMENT_SLUGS", "").strip()
+    if not selected:
+        return configs
+
+    selected_slugs = {slug.strip() for slug in selected.split(",") if slug.strip()}
+    filtered = [config for config in configs if config.slug in selected_slugs]
+    missing = selected_slugs - {config.slug for config in filtered}
+    if missing:
+        logger.warning("Ignoring unknown experiment slugs: %s", sorted(missing))
+    if not filtered:
+        raise ValueError("EXPERIMENT_SLUGS did not match any configured experiments")
+    return filtered
+
+
+def _make_config(
+    number: int,
+    setup_slug: str,
+    name: str,
+    family: str,
+    control_variable: str,
+    top_k: int,
+    baseline_model: str,
+    orchestrator_model: str,
+    search_model: str,
+    summarization_model: str,
+    fact_check_model: str,
+    final_synthesis_model: str,
+) -> AgentModelConfig:
+    return AgentModelConfig(
+        slug=f"experiment{number:02d}_{setup_slug}",
+        name=f"experiment{number:02d}: {name}",
+        family=family,
+        control_variable=control_variable,
+        top_k=top_k,
+        max_evidence_chunks=top_k,
+        baseline_model=baseline_model,
+        orchestrator_model=orchestrator_model,
+        search_model=search_model,
+        summarization_model=summarization_model,
+        fact_check_model=fact_check_model,
+        final_synthesis_model=final_synthesis_model,
     )
-    await _run_agent_config_experiment(config, baseline_agent, retriever, settings)
-
-
-async def experiment2(
-    baseline_agent: BaselineAgent,
-    retriever: ResearchPaperRetriever,
-    settings: OpenAISettings,
-) -> None:
-    fast_model = os.getenv("FAST_AGENT_MODEL", settings.openai_answer_model)
-    config = AgentModelConfig(
-        slug="experiment2_fast_same_model",
-        name="experiment2: precision small-context config",
-        top_k=3,
-        max_evidence_chunks=3,
-        orchestrator_model=fast_model,
-        search_model=fast_model,
-        summarization_model=fast_model,
-        fact_check_model=fast_model,
-        final_synthesis_model=fast_model,
-    )
-    await _run_agent_config_experiment(config, baseline_agent, retriever, settings)
-
-
-async def experiment3(
-    baseline_agent: BaselineAgent,
-    retriever: ResearchPaperRetriever,
-    settings: OpenAISettings,
-) -> None:
-    default_model = settings.openai_answer_model
-    strong_model = os.getenv("STRONG_AGENT_MODEL", default_model)
-    fast_model = os.getenv("FAST_AGENT_MODEL", default_model)
-    config = AgentModelConfig(
-        slug="experiment3_strong_verifier_synthesizer",
-        name="experiment3: high-recall strong verifier/synthesizer config",
-        top_k=8,
-        max_evidence_chunks=8,
-        orchestrator_model=fast_model,
-        search_model=fast_model,
-        summarization_model=fast_model,
-        fact_check_model=strong_model,
-        final_synthesis_model=strong_model,
-    )
-    await _run_agent_config_experiment(config, baseline_agent, retriever, settings)
 
 
 def _print_baseline_result(result: object, latency_seconds: float) -> None:
@@ -444,8 +816,11 @@ def _default_agent_model_config(default_model: str) -> AgentModelConfig:
     return AgentModelConfig(
         slug="default",
         name="default",
+        family="default",
+        control_variable="none",
         top_k=5,
         max_evidence_chunks=5,
+        baseline_model=_model_for("baseline", default_model),
         orchestrator_model=_model_for("orchestrator", default_model),
         search_model=_model_for("search", default_model),
         summarization_model=_model_for("summarization", default_model),
@@ -456,8 +831,11 @@ def _default_agent_model_config(default_model: str) -> AgentModelConfig:
 
 def _print_agent_config(config: AgentModelConfig) -> None:
     print("agent_config")
+    print(f"  family: {config.family}")
+    print(f"  control_variable: {config.control_variable}")
     print(f"  top_k: {config.top_k}")
     print(f"  max_evidence_chunks: {config.max_evidence_chunks}")
+    print(f"  baseline: {config.baseline_model}")
     print(f"  orchestrator: {config.orchestrator_model}")
     print(f"  search: {config.search_model}")
     print(f"  summarization: {config.summarization_model}")
@@ -489,8 +867,11 @@ def _write_answers(output_dir: Path, config: AgentModelConfig, metrics: list[Que
         "",
         "## Agent Configuration",
         "",
+        f"- family: {config.family}",
+        f"- control_variable: {config.control_variable}",
         f"- top_k: {config.top_k}",
         f"- max_evidence_chunks: {config.max_evidence_chunks}",
+        f"- baseline_model: {config.baseline_model}",
         f"- orchestrator_model: {config.orchestrator_model}",
         f"- search_model: {config.search_model}",
         f"- summarization_model: {config.summarization_model}",
@@ -598,7 +979,8 @@ def _plot_fact_check_statuses(output_dir: Path, metrics: list[QuestionRunMetrics
     x_positions = list(range(len(metrics)))
     bottoms = [0 for _ in metrics]
 
-    fig, ax = plt.subplots(figsize=(8, 4.5))
+    fig_width = max(8, min(20, len(labels) * 0.75))
+    fig, ax = plt.subplots(figsize=(fig_width, 4.5))
     for status in statuses:
         values = [metric.fact_check_status_counts.get(status, 0) for metric in metrics]
         ax.bar(x_positions, values, bottom=bottoms, label=status)
@@ -630,7 +1012,8 @@ def _bar_pair_plot(
     baseline_positions = [position - width / 2 for position in x_positions]
     orchestrator_positions = [position + width / 2 for position in x_positions]
 
-    fig, ax = plt.subplots(figsize=(8, 4.5))
+    fig_width = max(8, min(20, len(labels) * 0.75))
+    fig, ax = plt.subplots(figsize=(fig_width, 4.5))
     ax.bar(baseline_positions, baseline_values, width=width, label=baseline_label)
     ax.bar(orchestrator_positions, orchestrator_values, width=width, label=orchestrator_label)
     ax.set_title(title)
@@ -663,6 +1046,13 @@ async def _judge_experiment_results(output_dir: Path, settings: OpenAISettings) 
     judge_model = os.getenv("JUDGE_MODEL", "gpt-5.1")
     logger.info("Starting judge pass output_dir=%s judge_model=%s", output_dir, judge_model)
     judge_client = _llm_client(settings, judge_model)
+    judge_concurrency = _env_int("JUDGE_CONCURRENCY", 4)
+    judge_semaphore = asyncio.Semaphore(judge_concurrency)
+    logger.info(
+        "Running judge pass output_dir=%s judge_concurrency=%s",
+        output_dir,
+        judge_concurrency,
+    )
 
     payload = json.loads(metrics_path.read_text(encoding="utf-8"))
     questions = payload.get("questions") if isinstance(payload, dict) else None
@@ -670,42 +1060,63 @@ async def _judge_experiment_results(output_dir: Path, settings: OpenAISettings) 
         logger.warning("Metrics file does not contain question list path=%s", metrics_path)
         return
 
-    scores: list[dict[str, object]] = []
+    async def judge_with_limit(
+        system_name: str,
+        question_index: int,
+        question_type: str,
+        question_text: str,
+        answer: str,
+        evidence: list[dict[str, object]],
+    ) -> dict[str, object]:
+        async with judge_semaphore:
+            logger.info(
+                "Judging experiment=%s question=%s system=%s",
+                output_dir.name,
+                question_index,
+                system_name,
+            )
+            return await _judge_single_answer(
+                judge_client=judge_client,
+                judge_model=judge_model,
+                experiment_slug=output_dir.name,
+                system_name=system_name,
+                question_index=question_index,
+                question_type=question_type,
+                question=question_text,
+                answer=answer,
+                evidence=evidence,
+            )
+
+    judge_tasks = []
     for question in questions:
         if not isinstance(question, dict):
             continue
         question_index = _optional_int(question.get("question_index")) or 0
         question_type = str(question.get("question_type", "unknown"))
         question_text = str(question.get("question", ""))
-        logger.info("Judging experiment=%s question=%s baseline", output_dir.name, question_index)
-        scores.append(
-            await _judge_single_answer(
-                judge_client=judge_client,
-                judge_model=judge_model,
-                experiment_slug=output_dir.name,
+        judge_tasks.append(
+            judge_with_limit(
                 system_name="baseline",
                 question_index=question_index,
                 question_type=question_type,
-                question=question_text,
+                question_text=question_text,
                 answer=str(question.get("baseline_answer", "")),
                 evidence=_list_of_dicts(question.get("baseline_evidence")),
             )
         )
-        logger.info("Judging experiment=%s question=%s multi_agent", output_dir.name, question_index)
-        scores.append(
-            await _judge_single_answer(
-                judge_client=judge_client,
-                judge_model=judge_model,
-                experiment_slug=output_dir.name,
+        judge_tasks.append(
+            judge_with_limit(
                 system_name="multi_agent",
                 question_index=question_index,
                 question_type=question_type,
-                question=question_text,
+                question_text=question_text,
                 answer=str(question.get("orchestrator_answer", "")),
                 evidence=_list_of_dicts(question.get("orchestrator_evidence")),
             )
         )
 
+    scores = list(await asyncio.gather(*judge_tasks))
+    scores.sort(key=lambda score: (_optional_int(score.get("question_index")) or 0, str(score.get("system", ""))))
     _write_judge_scores(output_dir, judge_model, scores)
     _plot_judge_scores(output_dir, scores)
     logger.info("Judge pass complete output_dir=%s scores=%s", output_dir, len(scores))
@@ -961,7 +1372,11 @@ def _summarize_experiment(slug: str, payload: dict[str, object]) -> dict[str, ob
     return {
         "slug": slug,
         "name": str(config.get("name", slug)),
+        "family": str(config.get("family", "")),
+        "control_variable": str(config.get("control_variable", "")),
         "top_k": _optional_int(config.get("top_k")) or 0,
+        "max_evidence_chunks": _optional_int(config.get("max_evidence_chunks")) or 0,
+        "baseline_model": str(config.get("baseline_model", "")),
         "orchestrator_model": str(config.get("orchestrator_model", "")),
         "search_model": str(config.get("search_model", "")),
         "summarization_model": str(config.get("summarization_model", "")),
@@ -1014,13 +1429,15 @@ def _write_summary_markdown(output_dir: Path, rows: list[dict[str, object]]) -> 
         "",
         "This summary is generated from the persisted `metrics.json` files in each experiment folder.",
         "",
-        "| Experiment | top_k | Avg Baseline Latency | Avg Multi-Agent Latency | Avg Baseline Tokens | Avg Multi-Agent Tokens | Avg Baseline Citations | Avg Multi-Agent Evidence | Unsupported Claims/Q |",
-        "|---|---:|---:|---:|---:|---:|---:|---:|---:|",
+        "| Experiment | Family | Control Variable | top_k | Avg Baseline Latency | Avg Multi-Agent Latency | Avg Baseline Tokens | Avg Multi-Agent Tokens | Avg Baseline Citations | Avg Multi-Agent Evidence | Unsupported Claims/Q |",
+        "|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|",
     ]
     for row in rows:
         lines.append(
-            "| {name} | {top_k} | {baseline_latency:.3f}s | {orchestrator_latency:.3f}s | {baseline_tokens:.1f} | {orchestrator_tokens:.1f} | {baseline_citations:.1f} | {orchestrator_evidence:.1f} | {unsupported:.2f} |".format(
+            "| {name} | {family} | {control_variable} | {top_k} | {baseline_latency:.3f}s | {orchestrator_latency:.3f}s | {baseline_tokens:.1f} | {orchestrator_tokens:.1f} | {baseline_citations:.1f} | {orchestrator_evidence:.1f} | {unsupported:.2f} |".format(
                 name=row["name"],
+                family=row["family"],
+                control_variable=row["control_variable"],
                 top_k=row["top_k"],
                 baseline_latency=row["avg_baseline_latency_seconds"],
                 orchestrator_latency=row["avg_orchestrator_latency_seconds"],
@@ -1046,6 +1463,11 @@ def _write_summary_markdown(output_dir: Path, rows: list[dict[str, object]]) -> 
             [
                 f"### {row['name']}",
                 "",
+                f"- family: {row['family']}",
+                f"- control_variable: {row['control_variable']}",
+                f"- top_k: {row['top_k']}",
+                f"- max_evidence_chunks: {row['max_evidence_chunks']}",
+                f"- baseline_model: {row['baseline_model']}",
                 f"- orchestrator_model: {row['orchestrator_model']}",
                 f"- search_model: {row['search_model']}",
                 f"- summarization_model: {row['summarization_model']}",
@@ -1125,7 +1547,8 @@ def _plot_summary_fact_checks(output_dir: Path, rows: list[dict[str, object]]) -
     x_positions = list(range(len(rows)))
     bottoms = [0.0 for _ in rows]
 
-    fig, ax = plt.subplots(figsize=(9, 4.8))
+    fig_width = max(9, min(22, len(labels) * 0.8))
+    fig, ax = plt.subplots(figsize=(fig_width, 4.8))
     for status in statuses:
         values = [float(row.get(f"avg_{status}_claims", 0.0)) for row in rows]
         ax.bar(x_positions, values, bottom=bottoms, label=status)
@@ -1215,6 +1638,17 @@ def _sum_fact_check_counts(questions: list[object]) -> dict[str, int]:
     return totals
 
 
+def _remove_stale_experiment_results(configs: list[AgentModelConfig]) -> None:
+    if not RESULTS_DIR.exists():
+        return
+    current_slugs = {config.slug for config in configs}
+    for output_dir in RESULTS_DIR.glob("experiment*"):
+        if not output_dir.is_dir() or output_dir.name in current_slugs:
+            continue
+        logger.info("Removing stale experiment result directory path=%s", output_dir)
+        shutil.rmtree(output_dir)
+
+
 def _avg(values: list[float | int]) -> float:
     return sum(values) / len(values) if values else 0.0
 
@@ -1275,12 +1709,14 @@ async def main() -> None:
     await _ingest_data(embedder, vector_store)
     retriever = ResearchPaperRetriever(embedder=embedder, vector_store=vector_store)
 
-    baseline_agent = build_baseline_agent(retriever, openai_settings)
-
-    experiments: list[ExperimentFn] = [experiment1, experiment2, experiment3]
-    for experiment in experiments:
-        logger.info("Dispatching experiment function=%s", experiment.__name__)
-        await experiment(baseline_agent, retriever, openai_settings)
+    all_experiment_configs = _experiment_configs(openai_settings)
+    experiment_configs = _filter_experiment_configs(all_experiment_configs)
+    if not os.getenv("EXPERIMENT_SLUGS", "").strip():
+        _remove_stale_experiment_results(all_experiment_configs)
+    logger.info("Loaded experiment configs count=%s", len(experiment_configs))
+    for config in experiment_configs:
+        logger.info("Dispatching experiment slug=%s", config.slug)
+        await _run_agent_config_experiment(config, retriever, openai_settings)
     _save_summary_results()
     logger.info("Experiment runner complete")
 

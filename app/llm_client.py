@@ -7,6 +7,7 @@ import httpx
 
 from app.config import OpenAISettings
 from app.models.answer import CompletionResult, TokenUsage
+from app.openai_rate_limit import retry_after_seconds, trigger_openai_cooldown, wait_for_openai_cooldown
 
 logger = logging.getLogger(__name__)
 
@@ -45,15 +46,7 @@ class LLMClient:
             "max_output_tokens": max_output_tokens or self.settings.openai_answer_max_output_tokens,
         }
 
-        async with httpx.AsyncClient(timeout=self.settings.openai_timeout_seconds) as client:
-            response = await client.post(
-                f"{self.settings.openai_base_url.rstrip('/')}/responses",
-                json=body,
-                headers={
-                    "Authorization": f"Bearer {self.settings.openai_api_key}",
-                    "Content-Type": "application/json",
-                },
-            )
+        response = await self._post_with_rate_limit_retry("/responses", body, label="responses")
 
         if not 200 <= response.status_code < 300:
             logger.error("OpenAI Responses API failed status=%s body=%s", response.status_code, response.text)
@@ -71,6 +64,42 @@ class LLMClient:
             result.token_usage.total_tokens,
         )
         return result
+
+    async def _post_with_rate_limit_retry(self, path: str, body: dict[str, Any], label: str) -> httpx.Response:
+        url = f"{self.settings.openai_base_url.rstrip('/')}{path}"
+        headers = {
+            "Authorization": f"Bearer {self.settings.openai_api_key}",
+            "Content-Type": "application/json",
+        }
+        max_retries = max(0, self.settings.openai_max_retries)
+
+        for attempt in range(1, max_retries + 2):
+            await wait_for_openai_cooldown(label)
+            async with httpx.AsyncClient(timeout=self.settings.openai_timeout_seconds) as client:
+                response = await client.post(url, json=body, headers=headers)
+
+            if response.status_code != 429:
+                return response
+
+            if attempt > max_retries:
+                return response
+
+            sleep_seconds = retry_after_seconds(
+                response.headers,
+                fallback_seconds=self.settings.openai_rate_limit_fallback_seconds,
+                attempt=attempt,
+            )
+            logger.warning(
+                "OpenAI rate limited request label=%s attempt=%s/%s sleep_seconds=%.1f body=%s",
+                label,
+                attempt,
+                max_retries + 1,
+                sleep_seconds,
+                response.text[:500],
+            )
+            await trigger_openai_cooldown(sleep_seconds, label)
+
+        raise LLMClientError("OpenAI retry loop ended unexpectedly")
 
 
 class LLMClientError(RuntimeError):

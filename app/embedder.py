@@ -6,6 +6,7 @@ from typing import Any
 import httpx
 
 from app.llm_client import LLMClient, LLMClientError
+from app.openai_rate_limit import retry_after_seconds, trigger_openai_cooldown, wait_for_openai_cooldown
 
 logger = logging.getLogger(__name__)
 
@@ -33,15 +34,7 @@ class OpenAIEmbedder:
             "dimensions": settings.openai_embedding_dimensions,
         }
 
-        async with httpx.AsyncClient(timeout=settings.openai_timeout_seconds) as client:
-            response = await client.post(
-                f"{settings.openai_base_url.rstrip('/')}/embeddings",
-                json=body,
-                headers={
-                    "Authorization": f"Bearer {settings.openai_api_key}",
-                    "Content-Type": "application/json",
-                },
-            )
+        response = await _post_embedding_with_rate_limit_retry(settings, body)
 
         if not 200 <= response.status_code < 300:
             logger.error("OpenAI Embeddings API failed status=%s body=%s", response.status_code, response.text)
@@ -65,3 +58,39 @@ def _extract_embedding(payload: dict[str, Any]) -> list[float]:
         raise LLMClientError("OpenAI Embeddings API response included a non-numeric embedding value")
 
     return [float(value) for value in embedding]
+
+
+async def _post_embedding_with_rate_limit_retry(settings: object, body: dict[str, Any]) -> httpx.Response:
+    url = f"{settings.openai_base_url.rstrip('/')}/embeddings"
+    headers = {
+        "Authorization": f"Bearer {settings.openai_api_key}",
+        "Content-Type": "application/json",
+    }
+    max_retries = max(0, settings.openai_max_retries)
+
+    for attempt in range(1, max_retries + 2):
+        await wait_for_openai_cooldown("embeddings")
+        async with httpx.AsyncClient(timeout=settings.openai_timeout_seconds) as client:
+            response = await client.post(url, json=body, headers=headers)
+
+        if response.status_code != 429:
+            return response
+
+        if attempt > max_retries:
+            return response
+
+        sleep_seconds = retry_after_seconds(
+            response.headers,
+            fallback_seconds=settings.openai_rate_limit_fallback_seconds,
+            attempt=attempt,
+        )
+        logger.warning(
+            "OpenAI rate limited embedding request attempt=%s/%s sleep_seconds=%.1f body=%s",
+            attempt,
+            max_retries + 1,
+            sleep_seconds,
+            response.text[:500],
+        )
+        await trigger_openai_cooldown(sleep_seconds, "embeddings")
+
+    raise LLMClientError("OpenAI embedding retry loop ended unexpectedly")

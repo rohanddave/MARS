@@ -12,7 +12,9 @@ class OpenAISettings:
     openai_answer_max_output_tokens: int = 512
     openai_embedding_model: str = "text-embedding-3-small"
     openai_embedding_dimensions: int = 1536
-    openai_timeout_seconds: float = 120.0
+    openai_timeout_seconds: float = 240.0
+    openai_max_retries: int = 5
+    openai_rate_limit_fallback_seconds: float = 30.0
 
     @classmethod
     def from_env(cls) -> "OpenAISettings":
@@ -26,6 +28,10 @@ class OpenAISettings:
             openai_embedding_model=os.getenv("OPENAI_EMBEDDING_MODEL", cls.openai_embedding_model),
             openai_embedding_dimensions=int(os.getenv("OPENAI_EMBEDDING_DIMENSIONS", cls.openai_embedding_dimensions)),
             openai_timeout_seconds=float(os.getenv("OPENAI_TIMEOUT_SECONDS", cls.openai_timeout_seconds)),
+            openai_max_retries=int(os.getenv("OPENAI_MAX_RETRIES", cls.openai_max_retries)),
+            openai_rate_limit_fallback_seconds=float(
+                os.getenv("OPENAI_RATE_LIMIT_FALLBACK_SECONDS", cls.openai_rate_limit_fallback_seconds)
+            ),
         )
 
 

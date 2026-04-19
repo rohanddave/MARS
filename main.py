@@ -36,10 +36,41 @@ from app.vector_store import PineconeVectorStore
 logger = logging.getLogger(__name__)
 
 QUESTIONS = [
-  "What is REALM and how does it differ from traditional language models like BERT in terms of knowledge storage and retrieval?",
-  "Explain how the retrieve-then-predict framework works in REALM, including the role of the latent variable z and backpropagation through the retriever.",
-  "What evidence does the paper provide that REALM improves Open-domain Question Answering performance compared to methods like ORQA, and what are the key reasons for this improvement?"
+    "What external knowledge source or corpus does REALM retrieve from, and how is it used by the model?",  # easy lookup
+    "Which downstream tasks or benchmarks does the paper use to evaluate REALM?",  # easy lookup
+    "What is REALM, and what does the paper mean by retrieval-augmented language model pre-training?",  # definition
+    "How does REALM differ from a standard parametric language model such as BERT in where knowledge is stored and accessed?",  # definition
+    "How does REALM's retrieve-then-predict framework work, including the role of the latent document variable z?",  # method/mechanism
+    "How does the paper train the retriever when the retrieved document is latent, and how does learning signal flow back to retrieval?",  # method/mechanism
+    "What approximations or engineering choices does REALM use to make retrieval over a large corpus practical during training and inference?",  # method/mechanism / implementation
+    "How does REALM compare with ORQA or other open-domain QA baselines, and what evidence supports that comparison?",  # comparison
+    "How does REALM's retrieval-based approach compare with storing knowledge only in model parameters?",  # comparison
+    "What ablation or diagnostic evidence shows that retrieval pre-training improves REALM rather than only the reader component?",  # evidence synthesis / ablation
+    "Synthesize the evidence for why REALM improves open-domain QA performance, including retrieval quality, pre-training, and downstream fine-tuning.",  # evidence synthesis
+    "Explain step by step how a masked-language-model pre-training objective can improve downstream open-domain QA in REALM.",  # multi-step reasoning
+    "If REALM retrieves an irrelevant document, how would that affect p(z|x), p(y|z,x), and the final answer prediction?",  # multi-step reasoning / error analysis
+    "What limitations, uncertainties, or missing comparisons should be noted when interpreting REALM's reported results?",  # limitation/uncertainty
+    "Which claims about REALM's performance or mechanism cannot be verified unless the answer cites specific experimental evidence from the paper?",  # citation grounding / uncertainty
 ]
+QUESTION_TYPES = [
+    "easy lookup",
+    "easy lookup",
+    "definition",
+    "definition",
+    "method/mechanism",
+    "method/mechanism",
+    "method/mechanism / implementation",
+    "comparison",
+    "comparison",
+    "evidence synthesis / ablation",
+    "evidence synthesis",
+    "multi-step reasoning",
+    "multi-step reasoning / error analysis",
+    "limitation/uncertainty",
+    "citation grounding / uncertainty",
+]
+if len(QUESTIONS) != len(QUESTION_TYPES):
+    raise ValueError("QUESTIONS and QUESTION_TYPES must have the same length")
 RESULTS_DIR = Path("res")
 
 
@@ -48,6 +79,7 @@ class AgentModelConfig:
     slug: str
     name: str
     top_k: int
+    max_evidence_chunks: int
     orchestrator_model: str
     search_model: str
     summarization_model: str
@@ -60,6 +92,7 @@ class QuestionRunMetrics:
     experiment_slug: str
     experiment_name: str
     question_index: int
+    question_type: str
     question: str
     top_k: int
     baseline_latency_seconds: float
@@ -127,6 +160,7 @@ def build_orchestrator_agent(
         summarization_agent=SummarizationAgent(llm_client=summary_client),
         fact_checking_agent=FactCheckingAgent(llm_client=fact_check_client),
         final_synthesis_agent=FinalSynthesisAgent(llm_client=synthesis_client),
+        max_evidence_chunks=config.max_evidence_chunks,
     )
 
 
@@ -145,19 +179,22 @@ async def _compare_question(
     config: AgentModelConfig,
     experiment_name: str,
     question_index: int,
+    question_type: str,
     question: str,
     baseline_agent: BaselineAgent,
     orchestrator_agent: OrchestratorAgent,
     top_k: int = 5,
 ) -> QuestionRunMetrics:
     logger.info(
-        "Comparing question experiment=%s question_index=%s top_k=%s",
+        "Comparing question experiment=%s question_index=%s question_type=%s top_k=%s",
         experiment_name,
         question_index,
+        question_type,
         top_k,
     )
     print(f"\n{'=' * 80}")
     print(experiment_name)
+    print(f"question_type: {question_type}")
     print(f"question: {question}")
     print(f"top_k: {top_k}")
 
@@ -193,6 +230,7 @@ async def _compare_question(
         experiment_slug=config.slug,
         experiment_name=experiment_name,
         question_index=question_index,
+        question_type=question_type,
         question=question,
         top_k=top_k,
         baseline_latency_seconds=baseline_latency,
@@ -228,6 +266,7 @@ async def _run_agent_config_experiment(
                 config=config,
                 experiment_name=f"{config.name}: question {index}",
                 question_index=index,
+                question_type=_question_type(index),
                 question=question,
                 baseline_agent=baseline_agent,
                 orchestrator_agent=orchestrator_agent,
@@ -249,8 +288,9 @@ async def experiment1(
     default_model = settings.openai_answer_model
     config = AgentModelConfig(
         slug="experiment1_balanced",
-        name="experiment1: balanced multi-agent config",
+        name="experiment1: balanced evidence config",
         top_k=5,
+        max_evidence_chunks=5,
         orchestrator_model=_model_for("orchestrator", default_model),
         search_model=_model_for("search", default_model),
         summarization_model=_model_for("summarization", default_model),
@@ -268,8 +308,9 @@ async def experiment2(
     fast_model = os.getenv("FAST_AGENT_MODEL", settings.openai_answer_model)
     config = AgentModelConfig(
         slug="experiment2_fast_same_model",
-        name="experiment2: fast same-model config",
+        name="experiment2: precision small-context config",
         top_k=3,
+        max_evidence_chunks=3,
         orchestrator_model=fast_model,
         search_model=fast_model,
         summarization_model=fast_model,
@@ -289,8 +330,9 @@ async def experiment3(
     fast_model = os.getenv("FAST_AGENT_MODEL", default_model)
     config = AgentModelConfig(
         slug="experiment3_strong_verifier_synthesizer",
-        name="experiment3: strong verifier and synthesizer config",
+        name="experiment3: high-recall strong verifier/synthesizer config",
         top_k=8,
+        max_evidence_chunks=8,
         orchestrator_model=fast_model,
         search_model=fast_model,
         summarization_model=fast_model,
@@ -403,6 +445,7 @@ def _default_agent_model_config(default_model: str) -> AgentModelConfig:
         slug="default",
         name="default",
         top_k=5,
+        max_evidence_chunks=5,
         orchestrator_model=_model_for("orchestrator", default_model),
         search_model=_model_for("search", default_model),
         summarization_model=_model_for("summarization", default_model),
@@ -414,6 +457,7 @@ def _default_agent_model_config(default_model: str) -> AgentModelConfig:
 def _print_agent_config(config: AgentModelConfig) -> None:
     print("agent_config")
     print(f"  top_k: {config.top_k}")
+    print(f"  max_evidence_chunks: {config.max_evidence_chunks}")
     print(f"  orchestrator: {config.orchestrator_model}")
     print(f"  search: {config.search_model}")
     print(f"  summarization: {config.summarization_model}")
@@ -446,6 +490,7 @@ def _write_answers(output_dir: Path, config: AgentModelConfig, metrics: list[Que
         "## Agent Configuration",
         "",
         f"- top_k: {config.top_k}",
+        f"- max_evidence_chunks: {config.max_evidence_chunks}",
         f"- orchestrator_model: {config.orchestrator_model}",
         f"- search_model: {config.search_model}",
         f"- summarization_model: {config.summarization_model}",
@@ -458,6 +503,8 @@ def _write_answers(output_dir: Path, config: AgentModelConfig, metrics: list[Que
         lines.extend(
             [
                 f"## Question {metric.question_index}",
+                "",
+                f"Type: {metric.question_type}",
                 "",
                 metric.question,
                 "",
@@ -601,6 +648,12 @@ def _question_labels(metrics: list[QuestionRunMetrics]) -> list[str]:
     return [f"Q{metric.question_index}" for metric in metrics]
 
 
+def _question_type(question_index: int) -> str:
+    if question_index < 1 or question_index > len(QUESTION_TYPES):
+        return "unknown"
+    return QUESTION_TYPES[question_index - 1]
+
+
 async def _judge_experiment_results(output_dir: Path, settings: OpenAISettings) -> None:
     metrics_path = output_dir / "metrics.json"
     if not metrics_path.exists():
@@ -622,6 +675,7 @@ async def _judge_experiment_results(output_dir: Path, settings: OpenAISettings) 
         if not isinstance(question, dict):
             continue
         question_index = _optional_int(question.get("question_index")) or 0
+        question_type = str(question.get("question_type", "unknown"))
         question_text = str(question.get("question", ""))
         logger.info("Judging experiment=%s question=%s baseline", output_dir.name, question_index)
         scores.append(
@@ -631,6 +685,7 @@ async def _judge_experiment_results(output_dir: Path, settings: OpenAISettings) 
                 experiment_slug=output_dir.name,
                 system_name="baseline",
                 question_index=question_index,
+                question_type=question_type,
                 question=question_text,
                 answer=str(question.get("baseline_answer", "")),
                 evidence=_list_of_dicts(question.get("baseline_evidence")),
@@ -644,6 +699,7 @@ async def _judge_experiment_results(output_dir: Path, settings: OpenAISettings) 
                 experiment_slug=output_dir.name,
                 system_name="multi_agent",
                 question_index=question_index,
+                question_type=question_type,
                 question=question_text,
                 answer=str(question.get("orchestrator_answer", "")),
                 evidence=_list_of_dicts(question.get("orchestrator_evidence")),
@@ -661,6 +717,7 @@ async def _judge_single_answer(
     experiment_slug: str,
     system_name: str,
     question_index: int,
+    question_type: str,
     question: str,
     answer: str,
     evidence: list[dict[str, object]],
@@ -708,6 +765,7 @@ Answer:
             "experiment_slug": experiment_slug,
             "system": system_name,
             "question_index": question_index,
+            "question_type": question_type,
             "question": question,
             "judge_model": judge_model,
             "judge_token_usage": asdict(completion.token_usage),
@@ -770,14 +828,15 @@ def _write_judge_scores(output_dir: Path, judge_model: str, scores: list[dict[st
         "",
         f"Judge model: `{judge_model}`",
         "",
-        "| System | Question | Factual Accuracy | Completeness | Citation Quality | Clarity | Unsupported Claims |",
-        "|---|---:|---:|---:|---:|---:|---:|",
+        "| System | Question | Type | Factual Accuracy | Completeness | Citation Quality | Clarity | Unsupported Claims |",
+        "|---|---:|---|---:|---:|---:|---:|---:|",
     ]
     for score in scores:
         lines.append(
-            "| {system} | Q{question} | {factual} | {complete} | {citation} | {clarity} | {unsupported} |".format(
+            "| {system} | Q{question} | {question_type} | {factual} | {complete} | {citation} | {clarity} | {unsupported} |".format(
                 system=score["system"],
                 question=score["question_index"],
+                question_type=score.get("question_type", "unknown"),
                 factual=score["factual_accuracy"],
                 complete=score["completeness"],
                 citation=score["citation_quality"],
@@ -909,6 +968,7 @@ def _summarize_experiment(slug: str, payload: dict[str, object]) -> dict[str, ob
         "fact_check_model": str(config.get("fact_check_model", "")),
         "final_synthesis_model": str(config.get("final_synthesis_model", "")),
         "question_count": len(questions),
+        "question_type_counts": _question_type_counts(questions),
         "avg_baseline_latency_seconds": _avg(baseline_latencies),
         "avg_orchestrator_latency_seconds": _avg(orchestrator_latencies),
         "avg_baseline_total_tokens": _avg(baseline_tokens),
@@ -971,6 +1031,14 @@ def _write_summary_markdown(output_dir: Path, rows: list[dict[str, object]]) -> 
                 unsupported=row["avg_unsupported_claims"],
             )
         )
+
+    lines.extend(["", "## Question Coverage", ""])
+    for row in rows:
+        type_counts = row.get("question_type_counts")
+        if not isinstance(type_counts, dict):
+            continue
+        coverage = ", ".join(f"{question_type}: {count}" for question_type, count in sorted(type_counts.items()))
+        lines.append(f"- {row['name']}: {coverage}")
 
     lines.extend(["", "## Model Configurations", ""])
     for row in rows:
@@ -1113,6 +1181,16 @@ def _int_from_question(question: object, key: str) -> int:
     if not isinstance(question, dict):
         return 0
     return _optional_int(question.get(key)) or 0
+
+
+def _question_type_counts(questions: list[object]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for question in questions:
+        if not isinstance(question, dict):
+            continue
+        question_type = str(question.get("question_type", "unknown"))
+        counts[question_type] = counts.get(question_type, 0) + 1
+    return counts
 
 
 def _token_total_from_question(question: object, key: str) -> int:

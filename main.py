@@ -1,0 +1,563 @@
+from __future__ import annotations
+
+import asyncio
+import json
+import os
+import shutil
+import time
+from dataclasses import asdict, dataclass, replace
+from pathlib import Path
+from typing import Awaitable, Callable
+
+import matplotlib
+
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+from dotenv import load_dotenv
+
+from app.agents.baseline import BaselineAgent, BaselineAgentResult
+from app.agents.multi_agent import (
+    FactCheckingAgent,
+    FinalSynthesisAgent,
+    MultiAgentAnswer,
+    OrchestratorAgent,
+    SearchAgent,
+    SummarizationAgent,
+)
+from app.config import OpenAISettings, PineconeSettings
+from app.embedder import OpenAIEmbedder
+from app.ingestor import ResearchPaperIngestor
+from app.llm_client import LLMClient
+from app.models.answer import TokenUsage
+from app.retriever import ResearchPaperRetriever
+from app.vector_store import PineconeVectorStore
+
+QUESTIONS = [
+    "What is the main contribution of the research paper?",
+    "What methods does the paper use, and what are the most important results?",
+    "What limitations or open problems does the paper identify?",
+]
+RESULTS_DIR = Path("res")
+
+
+@dataclass(frozen=True)
+class AgentModelConfig:
+    slug: str
+    name: str
+    top_k: int
+    orchestrator_model: str
+    search_model: str
+    summarization_model: str
+    fact_check_model: str
+    final_synthesis_model: str
+
+
+@dataclass(frozen=True)
+class QuestionRunMetrics:
+    experiment_slug: str
+    experiment_name: str
+    question_index: int
+    question: str
+    top_k: int
+    baseline_latency_seconds: float
+    orchestrator_latency_seconds: float
+    baseline_token_usage: TokenUsage
+    orchestrator_token_usage: TokenUsage
+    baseline_citation_count: int
+    orchestrator_evidence_count: int
+    fact_check_status_counts: dict[str, int]
+    baseline_answer: str
+    orchestrator_answer: str
+
+
+ExperimentFn = Callable[[BaselineAgent, ResearchPaperRetriever, OpenAISettings], Awaitable[None]]
+
+
+def _llm_client(settings: OpenAISettings, model: str | None = None) -> LLMClient:
+    if model:
+        settings = replace(settings, openai_answer_model=model)
+    return LLMClient(settings)
+
+
+def _model_for(role: str, default_model: str) -> str:
+    env_name = f"{role.upper()}_MODEL"
+    return os.getenv(env_name, default_model)
+
+
+def build_baseline_agent(
+    retriever: ResearchPaperRetriever,
+    settings: OpenAISettings,
+) -> BaselineAgent:
+    baseline_model = _model_for("baseline", settings.openai_answer_model)
+    return BaselineAgent(retriever=retriever, llm_client=_llm_client(settings, baseline_model))
+
+
+def build_orchestrator_agent(
+    retriever: ResearchPaperRetriever,
+    settings: OpenAISettings,
+    config: AgentModelConfig | None = None,
+) -> OrchestratorAgent:
+    default_model = settings.openai_answer_model
+    config = config or _default_agent_model_config(default_model)
+    planner_client = _llm_client(settings, config.orchestrator_model)
+    search_client = _llm_client(settings, config.search_model)
+    summary_client = _llm_client(settings, config.summarization_model)
+    fact_check_client = _llm_client(settings, config.fact_check_model)
+    synthesis_client = _llm_client(settings, config.final_synthesis_model)
+
+    return OrchestratorAgent(
+        llm_client=planner_client,
+        search_agent=SearchAgent(retriever=retriever, llm_client=search_client),
+        summarization_agent=SummarizationAgent(llm_client=summary_client),
+        fact_checking_agent=FactCheckingAgent(llm_client=fact_check_client),
+        final_synthesis_agent=FinalSynthesisAgent(llm_client=synthesis_client),
+    )
+
+
+async def _measure(label: str, run: Callable[[], Awaitable[object]]) -> tuple[object, float]:
+    start = time.perf_counter()
+    result = await run()
+    latency_seconds = time.perf_counter() - start
+    print(f"\n--- {label} ---")
+    print(f"latency_seconds: {latency_seconds:.3f}")
+    return result, latency_seconds
+
+
+async def _compare_question(
+    config: AgentModelConfig,
+    experiment_name: str,
+    question_index: int,
+    question: str,
+    baseline_agent: BaselineAgent,
+    orchestrator_agent: OrchestratorAgent,
+    top_k: int = 5,
+) -> QuestionRunMetrics:
+    print(f"\n{'=' * 80}")
+    print(experiment_name)
+    print(f"question: {question}")
+    print(f"top_k: {top_k}")
+
+    baseline_result, baseline_latency = await _measure(
+        "baseline",
+        lambda: baseline_agent.answer(question, top_k=top_k),
+    )
+    _print_baseline_result(baseline_result, baseline_latency)
+
+    orchestrator_result, orchestrator_latency = await _measure(
+        "multi_agent_orchestrator",
+        lambda: orchestrator_agent.answer(question, top_k=top_k),
+    )
+    _print_orchestrator_result(orchestrator_result, orchestrator_latency)
+
+    print("\ncomparison")
+    print(f"baseline_latency_seconds: {baseline_latency:.3f}")
+    print(f"orchestrator_latency_seconds: {orchestrator_latency:.3f}")
+    print(f"baseline_total_tokens: {_total_tokens(baseline_result.token_usage)}")
+    print(f"orchestrator_total_tokens: {_total_tokens(orchestrator_result.token_usage)}")
+    print(f"baseline_citation_count: {len(baseline_result.citations)}")
+    print(f"orchestrator_evidence_count: {len(orchestrator_result.evidence)}")
+
+    status_counts = _fact_check_status_counts(orchestrator_result)
+    return QuestionRunMetrics(
+        experiment_slug=config.slug,
+        experiment_name=experiment_name,
+        question_index=question_index,
+        question=question,
+        top_k=top_k,
+        baseline_latency_seconds=baseline_latency,
+        orchestrator_latency_seconds=orchestrator_latency,
+        baseline_token_usage=baseline_result.token_usage,
+        orchestrator_token_usage=orchestrator_result.token_usage,
+        baseline_citation_count=len(baseline_result.citations),
+        orchestrator_evidence_count=len(orchestrator_result.evidence),
+        fact_check_status_counts=status_counts,
+        baseline_answer=baseline_result.answer,
+        orchestrator_answer=orchestrator_result.answer,
+    )
+
+
+async def _run_agent_config_experiment(
+    config: AgentModelConfig,
+    baseline_agent: BaselineAgent,
+    retriever: ResearchPaperRetriever,
+    settings: OpenAISettings,
+) -> None:
+    print(f"\n\n{'#' * 80}")
+    print(f"running {config.name}")
+    _print_agent_config(config)
+
+    orchestrator_agent = build_orchestrator_agent(retriever, settings, config)
+    metrics: list[QuestionRunMetrics] = []
+    for index, question in enumerate(QUESTIONS, start=1):
+        metrics.append(
+            await _compare_question(
+                config=config,
+                experiment_name=f"{config.name}: question {index}",
+                question_index=index,
+                question=question,
+                baseline_agent=baseline_agent,
+                orchestrator_agent=orchestrator_agent,
+                top_k=config.top_k,
+            )
+        )
+
+    output_dir = _save_experiment_results(config, metrics)
+    print(f"\nsaved_results: {output_dir}")
+
+
+async def experiment1(
+    baseline_agent: BaselineAgent,
+    retriever: ResearchPaperRetriever,
+    settings: OpenAISettings,
+) -> None:
+    default_model = settings.openai_answer_model
+    config = AgentModelConfig(
+        slug="experiment1_balanced",
+        name="experiment1: balanced multi-agent config",
+        top_k=5,
+        orchestrator_model=_model_for("orchestrator", default_model),
+        search_model=_model_for("search", default_model),
+        summarization_model=_model_for("summarization", default_model),
+        fact_check_model=_model_for("fact_check", default_model),
+        final_synthesis_model=_model_for("final_synthesis", default_model),
+    )
+    await _run_agent_config_experiment(config, baseline_agent, retriever, settings)
+
+
+async def experiment2(
+    baseline_agent: BaselineAgent,
+    retriever: ResearchPaperRetriever,
+    settings: OpenAISettings,
+) -> None:
+    fast_model = os.getenv("FAST_AGENT_MODEL", settings.openai_answer_model)
+    config = AgentModelConfig(
+        slug="experiment2_fast_same_model",
+        name="experiment2: fast same-model config",
+        top_k=3,
+        orchestrator_model=fast_model,
+        search_model=fast_model,
+        summarization_model=fast_model,
+        fact_check_model=fast_model,
+        final_synthesis_model=fast_model,
+    )
+    await _run_agent_config_experiment(config, baseline_agent, retriever, settings)
+
+
+async def experiment3(
+    baseline_agent: BaselineAgent,
+    retriever: ResearchPaperRetriever,
+    settings: OpenAISettings,
+) -> None:
+    default_model = settings.openai_answer_model
+    strong_model = os.getenv("STRONG_AGENT_MODEL", default_model)
+    fast_model = os.getenv("FAST_AGENT_MODEL", default_model)
+    config = AgentModelConfig(
+        slug="experiment3_strong_verifier_synthesizer",
+        name="experiment3: strong verifier and synthesizer config",
+        top_k=8,
+        orchestrator_model=fast_model,
+        search_model=fast_model,
+        summarization_model=fast_model,
+        fact_check_model=strong_model,
+        final_synthesis_model=strong_model,
+    )
+    await _run_agent_config_experiment(config, baseline_agent, retriever, settings)
+
+
+def _print_baseline_result(result: object, latency_seconds: float) -> None:
+    if not isinstance(result, BaselineAgentResult):
+        raise TypeError("Expected BaselineAgentResult")
+
+    print(f"answer:\n{result.answer}")
+    print(f"token_usage: {_format_usage(result.token_usage)}")
+    print(f"citations_returned: {len(result.citations)}")
+    for citation in result.citations:
+        score = f"{citation.score:.4f}" if citation.score is not None else "unknown"
+        print(f"  [{citation.number}] source={citation.source} chunk_id={citation.chunk_id} score={score}")
+
+
+def _print_orchestrator_result(result: object, latency_seconds: float) -> None:
+    if not isinstance(result, MultiAgentAnswer):
+        raise TypeError("Expected MultiAgentAnswer")
+
+    print(f"answer:\n{result.answer}")
+    print(f"token_usage: {_format_usage(result.token_usage)}")
+    print(f"plan_type: {result.plan.query_type}")
+    print(f"plan_use_web: {result.plan.use_web}")
+    print(f"plan_subquestions: {result.plan.subquestions}")
+    print(f"agent_order: {result.plan.agent_order}")
+    print(f"evidence_count: {len(result.evidence)}")
+    for item in result.evidence:
+        score = f"{item.score:.4f}" if item.score is not None else "unknown"
+        print(f"  [{item.citation_id}] source={item.source} chunk_id={item.chunk_id} score={score}")
+
+    status_counts = _fact_check_status_counts(result)
+    print(f"fact_check_status_counts: {status_counts}")
+    print(f"fact_check_needs_more_retrieval: {result.fact_check.needs_more_retrieval}")
+    if result.fact_check.suggested_queries:
+        print(f"fact_check_suggested_queries: {result.fact_check.suggested_queries}")
+
+
+def _format_usage(token_usage: TokenUsage) -> str:
+    return (
+        f"input={token_usage.input_tokens or 0}, "
+        f"output={token_usage.output_tokens or 0}, "
+        f"total={token_usage.total_tokens or 0}"
+    )
+
+
+def _total_tokens(token_usage: TokenUsage) -> int:
+    return token_usage.total_tokens or 0
+
+
+def _fact_check_status_counts(result: MultiAgentAnswer) -> dict[str, int]:
+    status_counts: dict[str, int] = {}
+    for check in result.fact_check.checks:
+        status_counts[check.status] = status_counts.get(check.status, 0) + 1
+    return status_counts
+
+
+def _print_model_config(settings: OpenAISettings) -> None:
+    default_model = settings.openai_answer_model
+    print("model_config")
+    print(f"  baseline: {_model_for('baseline', default_model)}")
+    print(f"  orchestrator: {_model_for('orchestrator', default_model)}")
+    print(f"  search: {_model_for('search', default_model)}")
+    print(f"  summarization: {_model_for('summarization', default_model)}")
+    print(f"  fact_check: {_model_for('fact_check', default_model)}")
+    print(f"  final_synthesis: {_model_for('final_synthesis', default_model)}")
+    print(f"  fast_agent: {os.getenv('FAST_AGENT_MODEL', default_model)}")
+    print(f"  strong_agent: {os.getenv('STRONG_AGENT_MODEL', default_model)}")
+    print(f"  embedding: {settings.openai_embedding_model}")
+
+
+def _default_agent_model_config(default_model: str) -> AgentModelConfig:
+    return AgentModelConfig(
+        slug="default",
+        name="default",
+        top_k=5,
+        orchestrator_model=_model_for("orchestrator", default_model),
+        search_model=_model_for("search", default_model),
+        summarization_model=_model_for("summarization", default_model),
+        fact_check_model=_model_for("fact_check", default_model),
+        final_synthesis_model=_model_for("final_synthesis", default_model),
+    )
+
+
+def _print_agent_config(config: AgentModelConfig) -> None:
+    print("agent_config")
+    print(f"  top_k: {config.top_k}")
+    print(f"  orchestrator: {config.orchestrator_model}")
+    print(f"  search: {config.search_model}")
+    print(f"  summarization: {config.summarization_model}")
+    print(f"  fact_check: {config.fact_check_model}")
+    print(f"  final_synthesis: {config.final_synthesis_model}")
+
+
+def _save_experiment_results(config: AgentModelConfig, metrics: list[QuestionRunMetrics]) -> Path:
+    output_dir = RESULTS_DIR / config.slug
+    if output_dir.exists():
+        shutil.rmtree(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    _write_answers(output_dir, config, metrics)
+    _write_metrics_json(output_dir, config, metrics)
+    _plot_latency(output_dir, metrics)
+    _plot_token_usage(output_dir, metrics)
+    _plot_citations(output_dir, metrics)
+    _plot_fact_check_statuses(output_dir, metrics)
+    return output_dir
+
+
+def _write_answers(output_dir: Path, config: AgentModelConfig, metrics: list[QuestionRunMetrics]) -> None:
+    lines = [
+        f"# {config.name}",
+        "",
+        "## Agent Configuration",
+        "",
+        f"- top_k: {config.top_k}",
+        f"- orchestrator_model: {config.orchestrator_model}",
+        f"- search_model: {config.search_model}",
+        f"- summarization_model: {config.summarization_model}",
+        f"- fact_check_model: {config.fact_check_model}",
+        f"- final_synthesis_model: {config.final_synthesis_model}",
+        "",
+    ]
+
+    for metric in metrics:
+        lines.extend(
+            [
+                f"## Question {metric.question_index}",
+                "",
+                metric.question,
+                "",
+                "### Baseline Answer",
+                "",
+                metric.baseline_answer,
+                "",
+                "### Multi-Agent Answer",
+                "",
+                metric.orchestrator_answer,
+                "",
+                "### Metrics",
+                "",
+                f"- baseline_latency_seconds: {metric.baseline_latency_seconds:.3f}",
+                f"- orchestrator_latency_seconds: {metric.orchestrator_latency_seconds:.3f}",
+                f"- baseline_total_tokens: {_total_tokens(metric.baseline_token_usage)}",
+                f"- orchestrator_total_tokens: {_total_tokens(metric.orchestrator_token_usage)}",
+                f"- baseline_citation_count: {metric.baseline_citation_count}",
+                f"- orchestrator_evidence_count: {metric.orchestrator_evidence_count}",
+                f"- fact_check_status_counts: {metric.fact_check_status_counts}",
+                "",
+            ]
+        )
+
+    (output_dir / "answers.md").write_text("\n".join(lines), encoding="utf-8")
+
+
+def _write_metrics_json(output_dir: Path, config: AgentModelConfig, metrics: list[QuestionRunMetrics]) -> None:
+    payload = {
+        "config": asdict(config),
+        "questions": [
+            {
+                **asdict(metric),
+                "baseline_token_usage": asdict(metric.baseline_token_usage),
+                "orchestrator_token_usage": asdict(metric.orchestrator_token_usage),
+            }
+            for metric in metrics
+        ],
+    }
+    (output_dir / "metrics.json").write_text(json.dumps(payload, indent=2), encoding="utf-8")
+
+
+def _plot_latency(output_dir: Path, metrics: list[QuestionRunMetrics]) -> None:
+    labels = _question_labels(metrics)
+    _bar_pair_plot(
+        output_path=output_dir / "latency_seconds.png",
+        title="Latency by Question",
+        ylabel="seconds",
+        labels=labels,
+        baseline_values=[metric.baseline_latency_seconds for metric in metrics],
+        orchestrator_values=[metric.orchestrator_latency_seconds for metric in metrics],
+    )
+
+
+def _plot_token_usage(output_dir: Path, metrics: list[QuestionRunMetrics]) -> None:
+    labels = _question_labels(metrics)
+    _bar_pair_plot(
+        output_path=output_dir / "token_usage_total.png",
+        title="Total Token Usage by Question",
+        ylabel="tokens",
+        labels=labels,
+        baseline_values=[_total_tokens(metric.baseline_token_usage) for metric in metrics],
+        orchestrator_values=[_total_tokens(metric.orchestrator_token_usage) for metric in metrics],
+    )
+
+
+def _plot_citations(output_dir: Path, metrics: list[QuestionRunMetrics]) -> None:
+    labels = _question_labels(metrics)
+    _bar_pair_plot(
+        output_path=output_dir / "citations_and_evidence.png",
+        title="Citations and Evidence by Question",
+        ylabel="count",
+        labels=labels,
+        baseline_values=[metric.baseline_citation_count for metric in metrics],
+        orchestrator_values=[metric.orchestrator_evidence_count for metric in metrics],
+        baseline_label="baseline citations",
+        orchestrator_label="orchestrator evidence",
+    )
+
+
+def _plot_fact_check_statuses(output_dir: Path, metrics: list[QuestionRunMetrics]) -> None:
+    labels = _question_labels(metrics)
+    statuses = ["supported", "weakly_supported", "unsupported"]
+    x_positions = list(range(len(metrics)))
+    bottoms = [0 for _ in metrics]
+
+    fig, ax = plt.subplots(figsize=(8, 4.5))
+    for status in statuses:
+        values = [metric.fact_check_status_counts.get(status, 0) for metric in metrics]
+        ax.bar(x_positions, values, bottom=bottoms, label=status)
+        bottoms = [bottom + value for bottom, value in zip(bottoms, values)]
+
+    ax.set_title("Fact Check Status Counts")
+    ax.set_ylabel("claims")
+    ax.set_xticks(x_positions)
+    ax.set_xticklabels(labels)
+    ax.legend()
+    fig.tight_layout()
+    fig.savefig(output_dir / "fact_check_statuses.png", dpi=160)
+    plt.close(fig)
+
+
+def _bar_pair_plot(
+    output_path: Path,
+    title: str,
+    ylabel: str,
+    labels: list[str],
+    baseline_values: list[float],
+    orchestrator_values: list[float],
+    baseline_label: str = "baseline",
+    orchestrator_label: str = "orchestrator",
+) -> None:
+    x_positions = list(range(len(labels)))
+    width = 0.36
+    baseline_positions = [position - width / 2 for position in x_positions]
+    orchestrator_positions = [position + width / 2 for position in x_positions]
+
+    fig, ax = plt.subplots(figsize=(8, 4.5))
+    ax.bar(baseline_positions, baseline_values, width=width, label=baseline_label)
+    ax.bar(orchestrator_positions, orchestrator_values, width=width, label=orchestrator_label)
+    ax.set_title(title)
+    ax.set_ylabel(ylabel)
+    ax.set_xticks(x_positions)
+    ax.set_xticklabels(labels)
+    ax.legend()
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=160)
+    plt.close(fig)
+
+
+def _question_labels(metrics: list[QuestionRunMetrics]) -> list[str]:
+    return [f"Q{metric.question_index}" for metric in metrics]
+
+
+async def _ingest_data(embedder: OpenAIEmbedder, vector_store: PineconeVectorStore) -> None:
+    print("\ningestion")
+    start = time.perf_counter()
+    ingestor = ResearchPaperIngestor(embedder=embedder, vector_store=vector_store, data_dir="data")
+    result = await ingestor.ingest()
+    latency_seconds = time.perf_counter() - start
+
+    print(f"files_indexed: {len(result.files)}")
+    print(f"chunks_indexed: {result.chunk_count}")
+    print(f"latency_seconds: {latency_seconds:.3f}")
+    for file_result in result.files:
+        print(f"  {file_result.path}: {file_result.chunk_count} chunks")
+
+
+async def main() -> None:
+    load_dotenv()
+
+    openai_settings = OpenAISettings.from_env()
+    pinecone_settings = PineconeSettings.from_env()
+
+    _print_model_config(openai_settings)
+    print(f"pinecone_index: {pinecone_settings.pinecone_index_name}")
+    print(f"pinecone_namespace: {pinecone_settings.pinecone_namespace}")
+
+    shared_llm_client = _llm_client(openai_settings)
+    embedder = OpenAIEmbedder(shared_llm_client)
+    vector_store = PineconeVectorStore(pinecone_settings)
+    await _ingest_data(embedder, vector_store)
+    retriever = ResearchPaperRetriever(embedder=embedder, vector_store=vector_store)
+
+    baseline_agent = build_baseline_agent(retriever, openai_settings)
+
+    experiments: list[ExperimentFn] = [experiment1, experiment2, experiment3]
+    for experiment in experiments:
+        await experiment(baseline_agent, retriever, openai_settings)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

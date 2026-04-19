@@ -1,0 +1,575 @@
+{
+  "judge_model": "gpt-5.1",
+  "scores": [
+    {
+      "factual_accuracy": 5,
+      "completeness": 5,
+      "citation_quality": 5,
+      "clarity": 5,
+      "unsupported_claims": 0,
+      "rationale": "The answer correctly notes that the provided context has no information about REALM\u2019s external knowledge source or its use, and makes no unsupported claims beyond that. It fully addresses the question within the constraint of the missing evidence, uses no citations as none are available, and is clear and concise.",
+      "experiment_slug": "experiment21_strong_fact_checker_top3",
+      "system": "baseline",
+      "question_index": 1,
+      "question_type": "easy lookup",
+      "question": "What external knowledge source or corpus does REALM retrieve from, and how is it used by the model?",
+      "judge_model": "gpt-5.1",
+      "judge_token_usage": {
+        "input_tokens": 300,
+        "output_tokens": 118,
+        "total_tokens": 418
+      }
+    },
+    {
+      "factual_accuracy": 5,
+      "completeness": 5,
+      "citation_quality": 1,
+      "clarity": 5,
+      "unsupported_claims": 0,
+      "rationale": "The answer correctly notes that no evidence is available and does not speculate beyond it, so it is factually accurate relative to the provided evidence and complete in that limited context. No citations are used, so citation quality is minimal. The response is clear and contains no unsupported claims.",
+      "experiment_slug": "experiment21_strong_fact_checker_top3",
+      "system": "multi_agent",
+      "question_index": 1,
+      "question_type": "easy lookup",
+      "question": "What external knowledge source or corpus does REALM retrieve from, and how is it used by the model?",
+      "judge_model": "gpt-5.1",
+      "judge_token_usage": {
+        "input_tokens": 289,
+        "output_tokens": 116,
+        "total_tokens": 405
+      }
+    },
+    {
+      "factual_accuracy": 5,
+      "completeness": 5,
+      "citation_quality": 5,
+      "clarity": 5,
+      "unsupported_claims": 0,
+      "rationale": "The answer correctly states that the necessary information is not in the provided context and does not invent any details. It fully addresses the question given the lack of evidence, uses no citations (appropriately, since none are available), is clear and straightforward, and makes no unsupported claims.",
+      "experiment_slug": "experiment21_strong_fact_checker_top3",
+      "system": "baseline",
+      "question_index": 2,
+      "question_type": "easy lookup",
+      "question": "Which downstream tasks or benchmarks does the paper use to evaluate REALM?",
+      "judge_model": "gpt-5.1",
+      "judge_token_usage": {
+        "input_tokens": 284,
+        "output_tokens": 116,
+        "total_tokens": 400
+      }
+    },
+    {
+      "factual_accuracy": 5,
+      "completeness": 2,
+      "citation_quality": 1,
+      "clarity": 5,
+      "unsupported_claims": 0,
+      "rationale": "The answer correctly states that the provided evidence does not contain information about the benchmarks used to evaluate REALM and refrains from guessing, so its factual content is accurate. However, it does not attempt to answer the original question beyond saying it cannot be determined from the evidence, so completeness is low. No real citations or evidence IDs are available, so citation quality is minimal. The explanation is clear and easy to follow. There are no unsupported factual claims, as the answer is essentially a limitation statement tied to the absence of evidence.",
+      "experiment_slug": "experiment21_strong_fact_checker_top3",
+      "system": "multi_agent",
+      "question_index": 2,
+      "question_type": "easy lookup",
+      "question": "Which downstream tasks or benchmarks does the paper use to evaluate REALM?",
+      "judge_model": "gpt-5.1",
+      "judge_token_usage": {
+        "input_tokens": 323,
+        "output_tokens": 166,
+        "total_tokens": 489
+      }
+    },
+    {
+      "factual_accuracy": 5,
+      "completeness": 3,
+      "citation_quality": 5,
+      "clarity": 5,
+      "unsupported_claims": 0,
+      "rationale": "The answer accurately states that the evidence does not contain information about REALM or retrieval-augmented language model pre-training, and it does not introduce any unsupported claims. However, it does not attempt to answer the question beyond noting the lack of evidence, so completeness is limited. Citation quality is appropriate given that no evidence was provided, and the response is clear and easy to follow.",
+      "experiment_slug": "experiment21_strong_fact_checker_top3",
+      "system": "baseline",
+      "question_index": 3,
+      "question_type": "definition",
+      "question": "What is REALM, and what does the paper mean by retrieval-augmented language model pre-training?",
+      "judge_model": "gpt-5.1",
+      "judge_token_usage": {
+        "input_tokens": 306,
+        "output_tokens": 137,
+        "total_tokens": 443
+      }
+    },
+    {
+      "factual_accuracy": 5,
+      "completeness": 2,
+      "citation_quality": 1,
+      "clarity": 5,
+      "unsupported_claims": 0,
+      "rationale": "The answer correctly states that the evidence does not contain the needed information and refrains from making unsupported claims, so it is factually accurate given the constraints. However, it does not attempt to explain or partially answer the question from general knowledge, so completeness is low. No citations are used, so citation quality is minimal. The response is clear and easy to understand, and it contains no unsupported claims.",
+      "experiment_slug": "experiment21_strong_fact_checker_top3",
+      "system": "multi_agent",
+      "question_index": 3,
+      "question_type": "definition",
+      "question": "What is REALM, and what does the paper mean by retrieval-augmented language model pre-training?",
+      "judge_model": "gpt-5.1",
+      "judge_token_usage": {
+        "input_tokens": 293,
+        "output_tokens": 141,
+        "total_tokens": 434
+      }
+    },
+    {
+      "factual_accuracy": 5,
+      "completeness": 5,
+      "citation_quality": 5,
+      "clarity": 5,
+      "unsupported_claims": 0,
+      "rationale": "The answer correctly notes that there is no evidence provided and therefore does not speculate beyond the given context. It fully addresses the meta-question (what can be said given the evidence), uses no citations as none are available, and makes no unsupported claims. The explanation is clear and directly tied to the lack of evidence.",
+      "experiment_slug": "experiment21_strong_fact_checker_top3",
+      "system": "baseline",
+      "question_index": 4,
+      "question_type": "definition",
+      "question": "How does REALM differ from a standard parametric language model such as BERT in where knowledge is stored and accessed?",
+      "judge_model": "gpt-5.1",
+      "judge_token_usage": {
+        "input_tokens": 310,
+        "output_tokens": 123,
+        "total_tokens": 433
+      }
+    },
+    {
+      "factual_accuracy": 5,
+      "completeness": 5,
+      "citation_quality": 1,
+      "clarity": 5,
+      "unsupported_claims": 0,
+      "rationale": "The answer correctly states that the evidence does not contain the needed information and refrains from speculating, so all claims are accurate relative to the provided evidence. It fully addresses the question under the given constraint by explicitly acknowledging the lack of evidence. There are no citations, but since no evidence was provided, citation quality is minimal by definition. The response is clear and straightforward, with no unsupported claims.",
+      "experiment_slug": "experiment21_strong_fact_checker_top3",
+      "system": "multi_agent",
+      "question_index": 4,
+      "question_type": "definition",
+      "question": "How does REALM differ from a standard parametric language model such as BERT in where knowledge is stored and accessed?",
+      "judge_model": "gpt-5.1",
+      "judge_token_usage": {
+        "input_tokens": 299,
+        "output_tokens": 140,
+        "total_tokens": 439
+      }
+    },
+    {
+      "factual_accuracy": 5,
+      "completeness": 5,
+      "citation_quality": 1,
+      "clarity": 5,
+      "unsupported_claims": 0,
+      "rationale": "The answer correctly states that the needed information is not in the provided evidence and makes no additional claims, so it is factually accurate and complete relative to the constraint of using only the given context. There are no citations, so citation quality is minimal but appropriate. The response is clear and contains no unsupported claims.",
+      "experiment_slug": "experiment21_strong_fact_checker_top3",
+      "system": "baseline",
+      "question_index": 5,
+      "question_type": "method/mechanism",
+      "question": "How does REALM's retrieve-then-predict framework work, including the role of the latent document variable z?",
+      "judge_model": "gpt-5.1",
+      "judge_token_usage": {
+        "input_tokens": 301,
+        "output_tokens": 123,
+        "total_tokens": 424
+      }
+    },
+    {
+      "factual_accuracy": 5,
+      "completeness": 1,
+      "citation_quality": 1,
+      "clarity": 5,
+      "unsupported_claims": 0,
+      "rationale": "The answer correctly states that the evidence does not contain the requested information and therefore does not attempt an explanation, which is factually accurate given the constraints. However, it does not address the substance of the question, so completeness is low. No citations are provided or needed because no claims beyond the evidence gap are made. The response is clear and contains no unsupported claims.",
+      "experiment_slug": "experiment21_strong_fact_checker_top3",
+      "system": "multi_agent",
+      "question_index": 5,
+      "question_type": "method/mechanism",
+      "question": "How does REALM's retrieve-then-predict framework work, including the role of the latent document variable z?",
+      "judge_model": "gpt-5.1",
+      "judge_token_usage": {
+        "input_tokens": 295,
+        "output_tokens": 134,
+        "total_tokens": 429
+      }
+    },
+    {
+      "factual_accuracy": 5,
+      "completeness": 5,
+      "citation_quality": 5,
+      "clarity": 5,
+      "unsupported_claims": 0,
+      "rationale": "The answer correctly states that there is no information in the provided context about the retriever training or learning signal flow and does not speculate beyond the evidence. It fully addresses the question given the lack of evidence, uses appropriate citation handling by explicitly noting the absence of citations, is clear and concise, and contains no unsupported claims.",
+      "experiment_slug": "experiment21_strong_fact_checker_top3",
+      "system": "baseline",
+      "question_index": 6,
+      "question_type": "method/mechanism",
+      "question": "How does the paper train the retriever when the retrieved document is latent, and how does learning signal flow back to retrieval?",
+      "judge_model": "gpt-5.1",
+      "judge_token_usage": {
+        "input_tokens": 307,
+        "output_tokens": 125,
+        "total_tokens": 432
+      }
+    },
+    {
+      "factual_accuracy": 5,
+      "completeness": 3,
+      "citation_quality": 1,
+      "clarity": 5,
+      "unsupported_claims": 0,
+      "rationale": "The answer correctly states that there is no information in the provided evidence and does not fabricate details, so its factual content is accurate. However, it only partially addresses the question by explaining the limitation rather than offering any substantive technical explanation, so completeness is limited. There are no citations at all, hence low citation quality. The response is clear and straightforward. It makes no unsupported claims beyond noting the lack of evidence.",
+      "experiment_slug": "experiment21_strong_fact_checker_top3",
+      "system": "multi_agent",
+      "question_index": 6,
+      "question_type": "method/mechanism",
+      "question": "How does the paper train the retriever when the retrieved document is latent, and how does learning signal flow back to retrieval?",
+      "judge_model": "gpt-5.1",
+      "judge_token_usage": {
+        "input_tokens": 304,
+        "output_tokens": 143,
+        "total_tokens": 447
+      }
+    },
+    {
+      "factual_accuracy": 5,
+      "completeness": 1,
+      "citation_quality": 1,
+      "clarity": 5,
+      "unsupported_claims": 0,
+      "rationale": "The answer correctly states that the provided context is insufficient and does not invent details, so it is factually accurate given the evidence. However, it does not address the substance of the question about REALM\u2019s approximations or engineering choices, so completeness is very low. There are no citations, so citation quality is minimal. The response is clear and straightforward. No unsupported claims are made.",
+      "experiment_slug": "experiment21_strong_fact_checker_top3",
+      "system": "baseline",
+      "question_index": 7,
+      "question_type": "method/mechanism / implementation",
+      "question": "What approximations or engineering choices does REALM use to make retrieval over a large corpus practical during training and inference?",
+      "judge_model": "gpt-5.1",
+      "judge_token_usage": {
+        "input_tokens": 288,
+        "output_tokens": 138,
+        "total_tokens": 426
+      }
+    },
+    {
+      "factual_accuracy": 5,
+      "completeness": 5,
+      "citation_quality": 1,
+      "clarity": 5,
+      "unsupported_claims": 0,
+      "rationale": "The answer correctly states that the evidence does not contain the requested information and refrains from making claims beyond the provided context, so it is factually accurate and complete relative to the evidence. There are no citations, so citation quality is minimal but appropriate given no evidence was provided. The response is clear and contains no unsupported claims.",
+      "experiment_slug": "experiment21_strong_fact_checker_top3",
+      "system": "multi_agent",
+      "question_index": 7,
+      "question_type": "method/mechanism / implementation",
+      "question": "What approximations or engineering choices does REALM use to make retrieval over a large corpus practical during training and inference?",
+      "judge_model": "gpt-5.1",
+      "judge_token_usage": {
+        "input_tokens": 297,
+        "output_tokens": 126,
+        "total_tokens": 423
+      }
+    },
+    {
+      "factual_accuracy": 5,
+      "completeness": 5,
+      "citation_quality": 5,
+      "clarity": 5,
+      "unsupported_claims": 0,
+      "rationale": "The answer correctly states that no comparison can be made because there is no evidence provided and does not invent any claims. It fully addresses the question within the constraint of missing evidence, is clear and direct, and appropriately notes the absence of citations.",
+      "experiment_slug": "experiment21_strong_fact_checker_top3",
+      "system": "baseline",
+      "question_index": 8,
+      "question_type": "comparison",
+      "question": "How does REALM compare with ORQA or other open-domain QA baselines, and what evidence supports that comparison?",
+      "judge_model": "gpt-5.1",
+      "judge_token_usage": {
+        "input_tokens": 312,
+        "output_tokens": 109,
+        "total_tokens": 421
+      }
+    },
+    {
+      "factual_accuracy": 5,
+      "completeness": 2,
+      "citation_quality": 1,
+      "clarity": 5,
+      "unsupported_claims": 0,
+      "rationale": "The answer correctly states that there is no evidence provided and does not invent any comparison, so its limited claims are factually accurate. However, it does not actually compare REALM with ORQA or other baselines, so it is incomplete relative to the question. No real citations to evidence are possible, so citation quality is minimal. The answer is clear and contains no unsupported claims beyond the given evidence context.",
+      "experiment_slug": "experiment21_strong_fact_checker_top3",
+      "system": "multi_agent",
+      "question_index": 8,
+      "question_type": "comparison",
+      "question": "How does REALM compare with ORQA or other open-domain QA baselines, and what evidence supports that comparison?",
+      "judge_model": "gpt-5.1",
+      "judge_token_usage": {
+        "input_tokens": 294,
+        "output_tokens": 142,
+        "total_tokens": 436
+      }
+    },
+    {
+      "factual_accuracy": 5,
+      "completeness": 5,
+      "citation_quality": 5,
+      "clarity": 5,
+      "unsupported_claims": 0,
+      "rationale": "The answer correctly states that the evidence does not contain information about REALM and thus no comparison can be made, which is fully accurate given the lack of evidence. It does not introduce any extra claims, so there are no unsupported statements. The response directly addresses the question in the context of the constraint (must rely only on provided evidence), which makes it complete for this setup. Citation quality is maximal because the answer appropriately uses no citations when none are available. The explanation is concise and clear.",
+      "experiment_slug": "experiment21_strong_fact_checker_top3",
+      "system": "baseline",
+      "question_index": 9,
+      "question_type": "comparison",
+      "question": "How does REALM's retrieval-based approach compare with storing knowledge only in model parameters?",
+      "judge_model": "gpt-5.1",
+      "judge_token_usage": {
+        "input_tokens": 292,
+        "output_tokens": 159,
+        "total_tokens": 451
+      }
+    },
+    {
+      "factual_accuracy": 5,
+      "completeness": 3,
+      "citation_quality": 1,
+      "clarity": 5,
+      "unsupported_claims": 0,
+      "rationale": "The answer correctly states that no comparison can be made given the lack of evidence, which is factually accurate within the constraints. It is clear and contains no unsupported claims. However, it is only partially complete because it does not attempt any high-level or generic comparison and there are no citations (none are possible with no evidence).",
+      "experiment_slug": "experiment21_strong_fact_checker_top3",
+      "system": "multi_agent",
+      "question_index": 9,
+      "question_type": "comparison",
+      "question": "How does REALM's retrieval-based approach compare with storing knowledge only in model parameters?",
+      "judge_model": "gpt-5.1",
+      "judge_token_usage": {
+        "input_tokens": 290,
+        "output_tokens": 127,
+        "total_tokens": 417
+      }
+    },
+    {
+      "factual_accuracy": 5,
+      "completeness": 3,
+      "citation_quality": 1,
+      "clarity": 5,
+      "unsupported_claims": 0,
+      "rationale": "The answer accurately states that no relevant evidence is provided and does not introduce unsupported claims. It is clear and concise. However, it only partially addresses the question because it does not discuss what kind of ablation or diagnostics would be needed or could exist in principle; it simply notes the lack of evidence. No citations are possible, so citation quality is minimal but appropriate to the context.",
+      "experiment_slug": "experiment21_strong_fact_checker_top3",
+      "system": "baseline",
+      "question_index": 10,
+      "question_type": "evidence synthesis / ablation",
+      "question": "What ablation or diagnostic evidence shows that retrieval pre-training improves REALM rather than only the reader component?",
+      "judge_model": "gpt-5.1",
+      "judge_token_usage": {
+        "input_tokens": 303,
+        "output_tokens": 137,
+        "total_tokens": 440
+      }
+    },
+    {
+      "factual_accuracy": 5,
+      "completeness": 4,
+      "citation_quality": 1,
+      "clarity": 5,
+      "unsupported_claims": 0,
+      "rationale": "The answer correctly states that no evidence is provided and refrains from making claims beyond the supplied context, so it is factually accurate. It addresses the question by explicitly noting that no ablation or diagnostic evidence is available in the given material, though it could have briefly mentioned typical forms of such evidence in general, so completeness is high but not perfect. No citations are present, hence citation quality is minimal by definition. The reasoning is clear and easy to follow, and there are no unsupported claims since the response is limited to what can be inferred from the lack of evidence.",
+      "experiment_slug": "experiment21_strong_fact_checker_top3",
+      "system": "multi_agent",
+      "question_index": 10,
+      "question_type": "evidence synthesis / ablation",
+      "question": "What ablation or diagnostic evidence shows that retrieval pre-training improves REALM rather than only the reader component?",
+      "judge_model": "gpt-5.1",
+      "judge_token_usage": {
+        "input_tokens": 348,
+        "output_tokens": 175,
+        "total_tokens": 523
+      }
+    },
+    {
+      "factual_accuracy": 5,
+      "completeness": 3,
+      "citation_quality": 5,
+      "clarity": 5,
+      "unsupported_claims": 0,
+      "rationale": "The answer correctly states that there is no information about REALM in the provided context and does not introduce any unsupported claims. It is factually accurate given the lack of evidence and appropriately refrains from speculation. However, completeness is limited because, although constrained by missing evidence, it does not attempt any partial synthesis or discussion beyond stating the lack of information. Citation quality is maximal for this situation, as it correctly uses none when none are available. The response is clear and easy to understand.",
+      "experiment_slug": "experiment21_strong_fact_checker_top3",
+      "system": "baseline",
+      "question_index": 11,
+      "question_type": "evidence synthesis",
+      "question": "Synthesize the evidence for why REALM improves open-domain QA performance, including retrieval quality, pre-training, and downstream fine-tuning.",
+      "judge_model": "gpt-5.1",
+      "judge_token_usage": {
+        "input_tokens": 325,
+        "output_tokens": 158,
+        "total_tokens": 483
+      }
+    },
+    {
+      "factual_accuracy": 5,
+      "completeness": 5,
+      "citation_quality": 5,
+      "clarity": 5,
+      "unsupported_claims": 0,
+      "rationale": "The answer correctly states that no evidence is provided and therefore a synthesis cannot be produced from the notes, which is fully accurate given the prompt. It fully addresses the question under the constraint of missing evidence. Citation quality is appropriate since it consistently references the absence of evidence. The response is clear and contains no unsupported claims.",
+      "experiment_slug": "experiment21_strong_fact_checker_top3",
+      "system": "multi_agent",
+      "question_index": 11,
+      "question_type": "evidence synthesis",
+      "question": "Synthesize the evidence for why REALM improves open-domain QA performance, including retrieval quality, pre-training, and downstream fine-tuning.",
+      "judge_model": "gpt-5.1",
+      "judge_token_usage": {
+        "input_tokens": 309,
+        "output_tokens": 124,
+        "total_tokens": 433
+      }
+    },
+    {
+      "factual_accuracy": 5,
+      "completeness": 2,
+      "citation_quality": 1,
+      "clarity": 5,
+      "unsupported_claims": 0,
+      "rationale": "The answer correctly states that no explanation can be given due to lack of evidence, which is factually consistent with the instructions and makes no unsupported claims. However, it does not address the substantive content of the question (how MLM pre-training helps REALM\u2019s QA) beyond saying it cannot, so completeness is low. There are no citations, so citation quality is minimal, though appropriate given no evidence. The response is clear and easy to understand.",
+      "experiment_slug": "experiment21_strong_fact_checker_top3",
+      "system": "baseline",
+      "question_index": 12,
+      "question_type": "multi-step reasoning",
+      "question": "Explain step by step how a masked-language-model pre-training objective can improve downstream open-domain QA in REALM.",
+      "judge_model": "gpt-5.1",
+      "judge_token_usage": {
+        "input_tokens": 316,
+        "output_tokens": 150,
+        "total_tokens": 466
+      }
+    },
+    {
+      "factual_accuracy": 5,
+      "completeness": 1,
+      "citation_quality": 1,
+      "clarity": 5,
+      "unsupported_claims": 0,
+      "rationale": "The answer correctly states that no relevant evidence is provided and refrains from making claims beyond the evidence, so factual accuracy is high and there are no unsupported claims. However, it does not address the actual technical question (how MLM pre-training improves REALM\u2019s QA) beyond saying it cannot, so completeness is very low. No real citations or evidence references are used, so citation quality is also very low. The response is brief and easy to understand, hence high clarity.",
+      "experiment_slug": "experiment21_strong_fact_checker_top3",
+      "system": "multi_agent",
+      "question_index": 12,
+      "question_type": "multi-step reasoning",
+      "question": "Explain step by step how a masked-language-model pre-training objective can improve downstream open-domain QA in REALM.",
+      "judge_model": "gpt-5.1",
+      "judge_token_usage": {
+        "input_tokens": 316,
+        "output_tokens": 155,
+        "total_tokens": 471
+      }
+    },
+    {
+      "factual_accuracy": 5,
+      "completeness": 5,
+      "citation_quality": 5,
+      "clarity": 5,
+      "unsupported_claims": 0,
+      "rationale": "The answer correctly notes that there is no evidence provided and therefore does not speculate beyond the given context. It directly addresses the question's answerability under the constraints, is clear and well structured, uses no unsupported claims, and appropriately explains the lack of citations.",
+      "experiment_slug": "experiment21_strong_fact_checker_top3",
+      "system": "baseline",
+      "question_index": 13,
+      "question_type": "multi-step reasoning / error analysis",
+      "question": "If REALM retrieves an irrelevant document, how would that affect p(z|x), p(y|z,x), and the final answer prediction?",
+      "judge_model": "gpt-5.1",
+      "judge_token_usage": {
+        "input_tokens": 327,
+        "output_tokens": 112,
+        "total_tokens": 439
+      }
+    },
+    {
+      "factual_accuracy": 5,
+      "completeness": 5,
+      "citation_quality": 1,
+      "clarity": 5,
+      "unsupported_claims": 0,
+      "rationale": "The answer correctly notes that no evidence is available and refrains from making any claims beyond that, so it is fully accurate and complete relative to the provided evidence. There are no citations, but given that no evidence exists, citation quality is minimal by definition. The explanation is clear and contains no unsupported claims.",
+      "experiment_slug": "experiment21_strong_fact_checker_top3",
+      "system": "multi_agent",
+      "question_index": 13,
+      "question_type": "multi-step reasoning / error analysis",
+      "question": "If REALM retrieves an irrelevant document, how would that affect p(z|x), p(y|z,x), and the final answer prediction?",
+      "judge_model": "gpt-5.1",
+      "judge_token_usage": {
+        "input_tokens": 327,
+        "output_tokens": 122,
+        "total_tokens": 449
+      }
+    },
+    {
+      "factual_accuracy": 5,
+      "completeness": 5,
+      "citation_quality": 5,
+      "clarity": 5,
+      "unsupported_claims": 0,
+      "rationale": "The answer correctly states that no evidence was provided and appropriately refrains from making claims about REALM's limitations. It fully addresses the question within the constraint of missing evidence, needs no citations, and is clear and concise. No unsupported claims are made.",
+      "experiment_slug": "experiment21_strong_fact_checker_top3",
+      "system": "baseline",
+      "question_index": 14,
+      "question_type": "limitation/uncertainty",
+      "question": "What limitations, uncertainties, or missing comparisons should be noted when interpreting REALM's reported results?",
+      "judge_model": "gpt-5.1",
+      "judge_token_usage": {
+        "input_tokens": 295,
+        "output_tokens": 111,
+        "total_tokens": 406
+      }
+    },
+    {
+      "factual_accuracy": 5,
+      "completeness": 5,
+      "citation_quality": 1,
+      "clarity": 5,
+      "unsupported_claims": 0,
+      "rationale": "The answer correctly states that no evidence was provided and therefore no limitations or uncertainties about REALM\u2019s results can be drawn, which is accurate given the context. It fully addresses the question within the constraint of missing evidence by explicitly acknowledging that the aspects cannot be determined. No citations are given, but since no evidence exists, this is appropriate; still, by rubric standards citation quality must be low. The response is clear and contains no unsupported claims.",
+      "experiment_slug": "experiment21_strong_fact_checker_top3",
+      "system": "multi_agent",
+      "question_index": 14,
+      "question_type": "limitation/uncertainty",
+      "question": "What limitations, uncertainties, or missing comparisons should be noted when interpreting REALM's reported results?",
+      "judge_model": "gpt-5.1",
+      "judge_token_usage": {
+        "input_tokens": 286,
+        "output_tokens": 149,
+        "total_tokens": 435
+      }
+    },
+    {
+      "factual_accuracy": 5,
+      "completeness": 3,
+      "citation_quality": 5,
+      "clarity": 5,
+      "unsupported_claims": 0,
+      "rationale": "The answer correctly notes that no evidence is provided and thus no claims about REALM\u2019s performance or mechanism can be verified, which is factually accurate given the context. However, it does not explicitly distinguish which types of claims (e.g., quantitative performance metrics, comparative results, architectural mechanisms) would require experimental evidence, so it only partially addresses the question\u2019s request, reducing completeness. There are no citations, but that is appropriate because no evidence was supplied and the answer explicitly acknowledges this, so citation quality is high relative to the constraints. The explanation is concise and clear, and it introduces no unsupported claims.",
+      "experiment_slug": "experiment21_strong_fact_checker_top3",
+      "system": "baseline",
+      "question_index": 15,
+      "question_type": "citation grounding / uncertainty",
+      "question": "Which claims about REALM's performance or mechanism cannot be verified unless the answer cites specific experimental evidence from the paper?",
+      "judge_model": "gpt-5.1",
+      "judge_token_usage": {
+        "input_tokens": 319,
+        "output_tokens": 182,
+        "total_tokens": 501
+      }
+    },
+    {
+      "factual_accuracy": 5,
+      "completeness": 3,
+      "citation_quality": 1,
+      "clarity": 4,
+      "unsupported_claims": 0,
+      "rationale": "The answer correctly notes that no evidence is provided and that claims about REALM\u2019s performance or mechanism cannot be verified without experimental evidence from the paper, which is accurate given the empty evidence set. However, it does not specifically distinguish or enumerate which kinds of claims (e.g., about accuracy numbers, ablation results, retrieval mechanisms) would require such evidence, so completeness is limited. The citation [E1] is invented; no evidence exists, so citation quality is poor. The explanation is otherwise clear and contains no unsupported factual claims beyond the meta-observation about missing evidence.",
+      "experiment_slug": "experiment21_strong_fact_checker_top3",
+      "system": "multi_agent",
+      "question_index": 15,
+      "question_type": "citation grounding / uncertainty",
+      "question": "Which claims about REALM's performance or mechanism cannot be verified unless the answer cites specific experimental evidence from the paper?",
+      "judge_model": "gpt-5.1",
+      "judge_token_usage": {
+        "input_tokens": 300,
+        "output_tokens": 176,
+        "total_tokens": 476
+      }
+    }
+  ]
+}

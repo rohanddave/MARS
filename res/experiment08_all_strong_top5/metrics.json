@@ -1,0 +1,453 @@
+{
+  "config": {
+    "slug": "experiment08_all_strong_top5",
+    "name": "experiment08: upper bound, all strong models, top_k=5",
+    "family": "model_upper_bound",
+    "control_variable": "all_agent_models",
+    "top_k": 5,
+    "max_evidence_chunks": 5,
+    "baseline_model": "gpt-4.1",
+    "orchestrator_model": "gpt-4.1",
+    "search_model": "gpt-4.1",
+    "summarization_model": "gpt-4.1",
+    "fact_check_model": "gpt-4.1",
+    "final_synthesis_model": "gpt-4.1"
+  },
+  "questions": [
+    {
+      "experiment_slug": "experiment08_all_strong_top5",
+      "experiment_name": "experiment08: upper bound, all strong models, top_k=5: question 1",
+      "question_index": 1,
+      "question_type": "easy lookup",
+      "question": "What external knowledge source or corpus does REALM retrieve from, and how is it used by the model?",
+      "top_k": 5,
+      "baseline_latency_seconds": 1.293898542000008,
+      "orchestrator_latency_seconds": 17.578198541999996,
+      "baseline_token_usage": {
+        "input_tokens": 153,
+        "output_tokens": 40,
+        "total_tokens": 193
+      },
+      "orchestrator_token_usage": {
+        "input_tokens": 2176,
+        "output_tokens": 600,
+        "total_tokens": 2776
+      },
+      "baseline_citation_count": 0,
+      "orchestrator_evidence_count": 0,
+      "fact_check_status_counts": {
+        "unsupported": 2
+      },
+      "baseline_evidence": [],
+      "orchestrator_evidence": [],
+      "baseline_answer": "The context provided does not include information about the external knowledge source or corpus that REALM retrieves from, nor how it is used by the model.\n\nCitations:\nNone (insufficient context provided).",
+      "orchestrator_answer": "There is no information available in the provided evidence notes about what external knowledge source or corpus REALM retrieves from, nor how it is used by the model. Therefore, this question cannot be answered with the current evidence."
+    },
+    {
+      "experiment_slug": "experiment08_all_strong_top5",
+      "experiment_name": "experiment08: upper bound, all strong models, top_k=5: question 2",
+      "question_index": 2,
+      "question_type": "easy lookup",
+      "question": "Which downstream tasks or benchmarks does the paper use to evaluate REALM?",
+      "top_k": 5,
+      "baseline_latency_seconds": 1.8818607500000013,
+      "orchestrator_latency_seconds": 16.477613791999985,
+      "baseline_token_usage": {
+        "input_tokens": 146,
+        "output_tokens": 33,
+        "total_tokens": 179
+      },
+      "orchestrator_token_usage": {
+        "input_tokens": 2121,
+        "output_tokens": 574,
+        "total_tokens": 2695
+      },
+      "baseline_citation_count": 0,
+      "orchestrator_evidence_count": 0,
+      "fact_check_status_counts": {
+        "unsupported": 2
+      },
+      "baseline_evidence": [],
+      "orchestrator_evidence": [],
+      "baseline_answer": "The context does not provide information about which downstream tasks or benchmarks are used to evaluate REALM.\n\nCitations:\nNone (no relevant information provided in the context).",
+      "orchestrator_answer": "The provided evidence notes do not contain any information about which downstream tasks or benchmarks the paper uses to evaluate REALM. Therefore, this information cannot be determined from the available evidence."
+    },
+    {
+      "experiment_slug": "experiment08_all_strong_top5",
+      "experiment_name": "experiment08: upper bound, all strong models, top_k=5: question 3",
+      "question_index": 3,
+      "question_type": "definition",
+      "question": "What is REALM, and what does the paper mean by retrieval-augmented language model pre-training?",
+      "top_k": 5,
+      "baseline_latency_seconds": 1.4625839170000035,
+      "orchestrator_latency_seconds": 15.920044290999996,
+      "baseline_token_usage": {
+        "input_tokens": 153,
+        "output_tokens": 49,
+        "total_tokens": 202
+      },
+      "orchestrator_token_usage": {
+        "input_tokens": 2191,
+        "output_tokens": 620,
+        "total_tokens": 2811
+      },
+      "baseline_citation_count": 0,
+      "orchestrator_evidence_count": 0,
+      "fact_check_status_counts": {
+        "unsupported": 2
+      },
+      "baseline_evidence": [],
+      "orchestrator_evidence": [],
+      "baseline_answer": "The context provided does not contain information about what REALM is or what retrieval-augmented language model pre-training means. Therefore, I am unable to answer the question using the supplied context.\n\nCitations:\nNone (no relevant context provided).",
+      "orchestrator_answer": "The provided evidence notes do not contain any information about REALM or the meaning of retrieval-augmented language model pre-training. Therefore, it is not possible to answer the question based on the available evidence."
+    },
+    {
+      "experiment_slug": "experiment08_all_strong_top5",
+      "experiment_name": "experiment08: upper bound, all strong models, top_k=5: question 4",
+      "question_index": 4,
+      "question_type": "definition",
+      "question": "How does REALM differ from a standard parametric language model such as BERT in where knowledge is stored and accessed?",
+      "top_k": 5,
+      "baseline_latency_seconds": 1.8322395419999964,
+      "orchestrator_latency_seconds": 17.81218904100001,
+      "baseline_token_usage": {
+        "input_tokens": 156,
+        "output_tokens": 42,
+        "total_tokens": 198
+      },
+      "orchestrator_token_usage": {
+        "input_tokens": 2228,
+        "output_tokens": 656,
+        "total_tokens": 2884
+      },
+      "baseline_citation_count": 0,
+      "orchestrator_evidence_count": 0,
+      "fact_check_status_counts": {
+        "unsupported": 2
+      },
+      "baseline_evidence": [],
+      "orchestrator_evidence": [],
+      "baseline_answer": "The context is insufficient to answer the question about how REALM differs from a standard parametric language model such as BERT in where knowledge is stored and accessed.\n\nCitations:\nNone (no context provided).",
+      "orchestrator_answer": "The provided evidence notes do not contain any information about REALM, standard parametric language models such as BERT, or how they differ in where knowledge is stored and accessed. Therefore, this question cannot be answered with the current evidence."
+    },
+    {
+      "experiment_slug": "experiment08_all_strong_top5",
+      "experiment_name": "experiment08: upper bound, all strong models, top_k=5: question 5",
+      "question_index": 5,
+      "question_type": "method/mechanism",
+      "question": "How does REALM's retrieve-then-predict framework work, including the role of the latent document variable z?",
+      "top_k": 5,
+      "baseline_latency_seconds": 1.7606957499999965,
+      "orchestrator_latency_seconds": 15.177378250000004,
+      "baseline_token_usage": {
+        "input_tokens": 155,
+        "output_tokens": 39,
+        "total_tokens": 194
+      },
+      "orchestrator_token_usage": {
+        "input_tokens": 2217,
+        "output_tokens": 646,
+        "total_tokens": 2863
+      },
+      "baseline_citation_count": 0,
+      "orchestrator_evidence_count": 0,
+      "fact_check_status_counts": {
+        "unsupported": 2
+      },
+      "baseline_evidence": [],
+      "orchestrator_evidence": [],
+      "baseline_answer": "The context provided does not contain information about REALM's retrieve-then-predict framework or the role of the latent document variable z. \n\nCitations:\nNone (no relevant context provided).",
+      "orchestrator_answer": "The provided evidence does not include any information about how REALM's retrieve-then-predict framework works or the role of the latent document variable z. Therefore, this question cannot be answered based on the supplied evidence."
+    },
+    {
+      "experiment_slug": "experiment08_all_strong_top5",
+      "experiment_name": "experiment08: upper bound, all strong models, top_k=5: question 6",
+      "question_index": 6,
+      "question_type": "method/mechanism",
+      "question": "How does the paper train the retriever when the retrieved document is latent, and how does learning signal flow back to retrieval?",
+      "top_k": 5,
+      "baseline_latency_seconds": 8.597333708000008,
+      "orchestrator_latency_seconds": 14.803050667000008,
+      "baseline_token_usage": {
+        "input_tokens": 157,
+        "output_tokens": 43,
+        "total_tokens": 200
+      },
+      "orchestrator_token_usage": {
+        "input_tokens": 2251,
+        "output_tokens": 697,
+        "total_tokens": 2948
+      },
+      "baseline_citation_count": 0,
+      "orchestrator_evidence_count": 0,
+      "fact_check_status_counts": {
+        "unsupported": 2
+      },
+      "baseline_evidence": [],
+      "orchestrator_evidence": [],
+      "baseline_answer": "The context provided does not contain information about how the paper trains the retriever when the retrieved document is latent, nor how the learning signal flows back to retrieval.\n\nCitations\nNone (no relevant context provided).",
+      "orchestrator_answer": "The provided evidence notes do not include any information about how the paper trains the retriever when the retrieved document is latent, or how learning signal flows back to retrieval. Therefore, this question cannot be answered based on the available evidence."
+    },
+    {
+      "experiment_slug": "experiment08_all_strong_top5",
+      "experiment_name": "experiment08: upper bound, all strong models, top_k=5: question 7",
+      "question_index": 7,
+      "question_type": "method/mechanism / implementation",
+      "question": "What approximations or engineering choices does REALM use to make retrieval over a large corpus practical during training and inference?",
+      "top_k": 5,
+      "baseline_latency_seconds": 2.1615533330000005,
+      "orchestrator_latency_seconds": 18.361606792000003,
+      "baseline_token_usage": {
+        "input_tokens": 155,
+        "output_tokens": 41,
+        "total_tokens": 196
+      },
+      "orchestrator_token_usage": {
+        "input_tokens": 2333,
+        "output_tokens": 754,
+        "total_tokens": 3087
+      },
+      "baseline_citation_count": 0,
+      "orchestrator_evidence_count": 0,
+      "fact_check_status_counts": {
+        "unsupported": 2
+      },
+      "baseline_evidence": [],
+      "orchestrator_evidence": [],
+      "baseline_answer": "The context provided does not contain information about the approximations or engineering choices that REALM uses to make retrieval over a large corpus practical during training and inference.\n\nCitations:\nNone (context was insufficient).",
+      "orchestrator_answer": "The provided evidence notes do not contain any information about the approximations or engineering choices that REALM uses to make retrieval over a large corpus practical during training and inference. Therefore, this question cannot be answered based on the available evidence."
+    },
+    {
+      "experiment_slug": "experiment08_all_strong_top5",
+      "experiment_name": "experiment08: upper bound, all strong models, top_k=5: question 8",
+      "question_index": 8,
+      "question_type": "comparison",
+      "question": "How does REALM compare with ORQA or other open-domain QA baselines, and what evidence supports that comparison?",
+      "top_k": 5,
+      "baseline_latency_seconds": 1.3674265840000146,
+      "orchestrator_latency_seconds": 16.32166720799998,
+      "baseline_token_usage": {
+        "input_tokens": 155,
+        "output_tokens": 45,
+        "total_tokens": 200
+      },
+      "orchestrator_token_usage": {
+        "input_tokens": 2340,
+        "output_tokens": 760,
+        "total_tokens": 3100
+      },
+      "baseline_citation_count": 0,
+      "orchestrator_evidence_count": 0,
+      "fact_check_status_counts": {
+        "unsupported": 1
+      },
+      "baseline_evidence": [],
+      "orchestrator_evidence": [],
+      "baseline_answer": "The context provided does not contain any information about how REALM compares with ORQA or other open-domain QA baselines, nor does it provide any evidence supporting such comparisons.\n\nCitations:\nNone (no relevant context provided).",
+      "orchestrator_answer": "The provided evidence does not include any information about REALM, ORQA, or other open-domain QA baselines, so no comparison can be made based on the available evidence."
+    },
+    {
+      "experiment_slug": "experiment08_all_strong_top5",
+      "experiment_name": "experiment08: upper bound, all strong models, top_k=5: question 9",
+      "question_index": 9,
+      "question_type": "comparison",
+      "question": "How does REALM's retrieval-based approach compare with storing knowledge only in model parameters?",
+      "top_k": 5,
+      "baseline_latency_seconds": 1.628154333000026,
+      "orchestrator_latency_seconds": 14.910659082999985,
+      "baseline_token_usage": {
+        "input_tokens": 149,
+        "output_tokens": 35,
+        "total_tokens": 184
+      },
+      "orchestrator_token_usage": {
+        "input_tokens": 2211,
+        "output_tokens": 668,
+        "total_tokens": 2879
+      },
+      "baseline_citation_count": 0,
+      "orchestrator_evidence_count": 0,
+      "fact_check_status_counts": {
+        "unsupported": 2
+      },
+      "baseline_evidence": [],
+      "orchestrator_evidence": [],
+      "baseline_answer": "There is no information available in the provided context to answer how REALM's retrieval-based approach compares with storing knowledge only in model parameters.\n\nCitations\nNo citations available.",
+      "orchestrator_answer": "The provided evidence notes do not supply any information about REALM's retrieval-based approach or how it compares with storing knowledge only in model parameters. Therefore, it is not possible to answer the question given the current evidence."
+    },
+    {
+      "experiment_slug": "experiment08_all_strong_top5",
+      "experiment_name": "experiment08: upper bound, all strong models, top_k=5: question 10",
+      "question_index": 10,
+      "question_type": "evidence synthesis / ablation",
+      "question": "What ablation or diagnostic evidence shows that retrieval pre-training improves REALM rather than only the reader component?",
+      "top_k": 5,
+      "baseline_latency_seconds": 2.981696874999983,
+      "orchestrator_latency_seconds": 16.73590862499998,
+      "baseline_token_usage": {
+        "input_tokens": 153,
+        "output_tokens": 40,
+        "total_tokens": 193
+      },
+      "orchestrator_token_usage": {
+        "input_tokens": 2255,
+        "output_tokens": 714,
+        "total_tokens": 2969
+      },
+      "baseline_citation_count": 0,
+      "orchestrator_evidence_count": 0,
+      "fact_check_status_counts": {
+        "unsupported": 2
+      },
+      "baseline_evidence": [],
+      "orchestrator_evidence": [],
+      "baseline_answer": "The context provided does not contain any information about ablation or diagnostic evidence showing that retrieval pre-training improves REALM rather than only the reader component.\n\nCitations:\nNone (insufficient context provided).",
+      "orchestrator_answer": "The provided evidence notes do not contain any information about ablation or diagnostic evidence showing that retrieval pre-training improves REALM rather than only the reader component [E1]. Therefore, it is not possible to answer this question based on the available evidence [E1]."
+    },
+    {
+      "experiment_slug": "experiment08_all_strong_top5",
+      "experiment_name": "experiment08: upper bound, all strong models, top_k=5: question 11",
+      "question_index": 11,
+      "question_type": "evidence synthesis",
+      "question": "Synthesize the evidence for why REALM improves open-domain QA performance, including retrieval quality, pre-training, and downstream fine-tuning.",
+      "top_k": 5,
+      "baseline_latency_seconds": 2.2654915829999993,
+      "orchestrator_latency_seconds": 14.494897333000011,
+      "baseline_token_usage": {
+        "input_tokens": 159,
+        "output_tokens": 47,
+        "total_tokens": 206
+      },
+      "orchestrator_token_usage": {
+        "input_tokens": 2375,
+        "output_tokens": 795,
+        "total_tokens": 3170
+      },
+      "baseline_citation_count": 0,
+      "orchestrator_evidence_count": 0,
+      "fact_check_status_counts": {
+        "unsupported": 2
+      },
+      "baseline_evidence": [],
+      "orchestrator_evidence": [],
+      "baseline_answer": "There is no information in the provided context to answer the question about evidence for why REALM improves open-domain QA performance, including retrieval quality, pre-training, and downstream fine-tuning.\n\nCitations:\nNone (no context provided).",
+      "orchestrator_answer": "The provided evidence does not include any notes regarding why REALM improves open-domain QA performance, nor does it discuss retrieval quality, pre-training, or downstream fine-tuning [Evidence notes unavailable]. Therefore, the question cannot be answered with the currently available evidence [Evidence notes unavailable]."
+    },
+    {
+      "experiment_slug": "experiment08_all_strong_top5",
+      "experiment_name": "experiment08: upper bound, all strong models, top_k=5: question 12",
+      "question_index": 12,
+      "question_type": "multi-step reasoning",
+      "question": "Explain step by step how a masked-language-model pre-training objective can improve downstream open-domain QA in REALM.",
+      "top_k": 5,
+      "baseline_latency_seconds": 3.2278125420000094,
+      "orchestrator_latency_seconds": 17.799343667000016,
+      "baseline_token_usage": {
+        "input_tokens": 154,
+        "output_tokens": 49,
+        "total_tokens": 203
+      },
+      "orchestrator_token_usage": {
+        "input_tokens": 2196,
+        "output_tokens": 631,
+        "total_tokens": 2827
+      },
+      "baseline_citation_count": 0,
+      "orchestrator_evidence_count": 0,
+      "fact_check_status_counts": {
+        "unsupported": 1
+      },
+      "baseline_evidence": [],
+      "orchestrator_evidence": [],
+      "baseline_answer": "The context provided does not contain information explaining how a masked-language-model pre-training objective can improve downstream open-domain QA in REALM. Therefore, I cannot answer the question based on the supplied context.\n\nCitations:\nNone (no context provided).",
+      "orchestrator_answer": "The provided evidence does not include any notes, so it is not possible to explain step by step how a masked-language-model pre-training objective can improve downstream open-domain QA in REALM [Evidence notes: No evidence notes available]."
+    },
+    {
+      "experiment_slug": "experiment08_all_strong_top5",
+      "experiment_name": "experiment08: upper bound, all strong models, top_k=5: question 13",
+      "question_index": 13,
+      "question_type": "multi-step reasoning / error analysis",
+      "question": "If REALM retrieves an irrelevant document, how would that affect p(z|x), p(y|z,x), and the final answer prediction?",
+      "top_k": 5,
+      "baseline_latency_seconds": 1.976340792000002,
+      "orchestrator_latency_seconds": 13.772837459000016,
+      "baseline_token_usage": {
+        "input_tokens": 161,
+        "output_tokens": 45,
+        "total_tokens": 206
+      },
+      "orchestrator_token_usage": {
+        "input_tokens": 2276,
+        "output_tokens": 672,
+        "total_tokens": 2948
+      },
+      "baseline_citation_count": 0,
+      "orchestrator_evidence_count": 0,
+      "fact_check_status_counts": {
+        "unsupported": 2
+      },
+      "baseline_evidence": [],
+      "orchestrator_evidence": [],
+      "baseline_answer": "The context does not provide information about how REALM handles irrelevant document retrieval or its effects on p(z|x), p(y|z,x), and the final answer prediction.\n\nCitations:\nNone (context was insufficient).",
+      "orchestrator_answer": "The provided evidence notes do not contain any information about how REALM behaves when it retrieves an irrelevant document or how this affects p(z|x), p(y|z,x), or the final answer prediction. Therefore, this question cannot be answered based on the current evidence."
+    },
+    {
+      "experiment_slug": "experiment08_all_strong_top5",
+      "experiment_name": "experiment08: upper bound, all strong models, top_k=5: question 14",
+      "question_index": 14,
+      "question_type": "limitation/uncertainty",
+      "question": "What limitations, uncertainties, or missing comparisons should be noted when interpreting REALM's reported results?",
+      "top_k": 5,
+      "baseline_latency_seconds": 1.8078843749999862,
+      "orchestrator_latency_seconds": 15.82455299999998,
+      "baseline_token_usage": {
+        "input_tokens": 151,
+        "output_tokens": 51,
+        "total_tokens": 202
+      },
+      "orchestrator_token_usage": {
+        "input_tokens": 2150,
+        "output_tokens": 582,
+        "total_tokens": 2732
+      },
+      "baseline_citation_count": 0,
+      "orchestrator_evidence_count": 0,
+      "fact_check_status_counts": {
+        "unsupported": 1
+      },
+      "baseline_evidence": [],
+      "orchestrator_evidence": [],
+      "baseline_answer": "The context provided does not include any information about the limitations, uncertainties, or missing comparisons regarding REALM's reported results. Therefore, it is not possible to answer the question based on the supplied context.\n\nCitations\nNone (no relevant context provided).",
+      "orchestrator_answer": "No assessment can be made regarding limitations, uncertainties, or missing comparisons for REALM's reported results because no evidence notes are available."
+    },
+    {
+      "experiment_slug": "experiment08_all_strong_top5",
+      "experiment_name": "experiment08: upper bound, all strong models, top_k=5: question 15",
+      "question_index": 15,
+      "question_type": "citation grounding / uncertainty",
+      "question": "Which claims about REALM's performance or mechanism cannot be verified unless the answer cites specific experimental evidence from the paper?",
+      "top_k": 5,
+      "baseline_latency_seconds": 1.9422988339999847,
+      "orchestrator_latency_seconds": 19.524385749999993,
+      "baseline_token_usage": {
+        "input_tokens": 155,
+        "output_tokens": 65,
+        "total_tokens": 220
+      },
+      "orchestrator_token_usage": {
+        "input_tokens": 2481,
+        "output_tokens": 962,
+        "total_tokens": 3443
+      },
+      "baseline_citation_count": 0,
+      "orchestrator_evidence_count": 0,
+      "fact_check_status_counts": {
+        "unsupported": 3
+      },
+      "baseline_evidence": [],
+      "orchestrator_evidence": [],
+      "baseline_answer": "Since no retrieved context was provided, no claims about REALM's performance or mechanism can be verified. Any claims regarding experimental evidence or the workings of REALM must be substantiated by specific citations to evidence from the relevant paper; without such context, these claims cannot be confirmed.\n\nCitations:\nNone (no context provided).",
+      "orchestrator_answer": "The provided evidence notes do not contain any experimental evidence or details about REALM's performance or mechanism, as they state \"No evidence notes available.\" Therefore, no claims about REALM's performance or mechanism can be verified unless the answer cites specific experimental evidence from the paper. Any such claims would require direct support from the evidence notes, which are currently missing. If more detail is needed, additional evidence notes should be provided."
+    }
+  ]
+}

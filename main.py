@@ -4,7 +4,6 @@ import asyncio
 import json
 import logging
 import os
-import shutil
 import time
 from dataclasses import asdict, dataclass, replace
 from pathlib import Path
@@ -846,8 +845,7 @@ def _print_agent_config(config: AgentModelConfig) -> None:
 def _save_experiment_results(config: AgentModelConfig, metrics: list[QuestionRunMetrics]) -> Path:
     output_dir = RESULTS_DIR / config.slug
     if output_dir.exists():
-        logger.info("Removing existing result directory path=%s", output_dir)
-        shutil.rmtree(output_dir)
+        logger.info("Reusing experiment result directory path=%s", output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     logger.info("Saving experiment results path=%s metrics=%s", output_dir, len(metrics))
 
@@ -1307,17 +1305,17 @@ def _list_of_dicts(value: object) -> list[dict[str, object]]:
     return [item for item in value if isinstance(item, dict)]
 
 
-def _save_summary_results() -> None:
+def _save_summary_results(configs: list[AgentModelConfig] | None = None) -> None:
     logger.info("Generating cross-experiment summary from persisted metrics")
-    experiment_metrics = _load_persisted_experiment_metrics()
+    allowed_slugs = {config.slug for config in configs if _experiment_is_complete(config)} if configs else None
+    experiment_metrics = _load_persisted_experiment_metrics(allowed_slugs)
     if not experiment_metrics:
         logger.warning("No experiment metrics found; skipping summary generation")
         return
 
     output_dir = RESULTS_DIR / "summary"
     if output_dir.exists():
-        logger.info("Removing existing summary directory path=%s", output_dir)
-        shutil.rmtree(output_dir)
+        logger.info("Reusing summary directory path=%s", output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
     rows = []
@@ -1335,12 +1333,15 @@ def _save_summary_results() -> None:
     logger.info("Summary results saved output_dir=%s experiments=%s", output_dir, len(rows))
 
 
-def _load_persisted_experiment_metrics() -> list[tuple[str, dict[str, object]]]:
+def _load_persisted_experiment_metrics(allowed_slugs: set[str] | None = None) -> list[tuple[str, dict[str, object]]]:
     metrics: list[tuple[str, dict[str, object]]] = []
     if not RESULTS_DIR.exists():
         return metrics
 
     for metrics_path in sorted(RESULTS_DIR.glob("experiment*/metrics.json")):
+        slug = metrics_path.parent.name
+        if allowed_slugs is not None and slug not in allowed_slugs:
+            continue
         try:
             payload = json.loads(metrics_path.read_text(encoding="utf-8"))
         except json.JSONDecodeError:
@@ -1349,7 +1350,7 @@ def _load_persisted_experiment_metrics() -> list[tuple[str, dict[str, object]]]:
         if not isinstance(payload, dict):
             logger.warning("Skipping metrics file with invalid shape path=%s", metrics_path)
             continue
-        metrics.append((metrics_path.parent.name, payload))
+        metrics.append((slug, payload))
     return metrics
 
 
@@ -1638,15 +1639,111 @@ def _sum_fact_check_counts(questions: list[object]) -> dict[str, int]:
     return totals
 
 
-def _remove_stale_experiment_results(configs: list[AgentModelConfig]) -> None:
-    if not RESULTS_DIR.exists():
-        return
-    current_slugs = {config.slug for config in configs}
-    for output_dir in RESULTS_DIR.glob("experiment*"):
-        if not output_dir.is_dir() or output_dir.name in current_slugs:
-            continue
-        logger.info("Removing stale experiment result directory path=%s", output_dir)
-        shutil.rmtree(output_dir)
+def _experiment_is_complete(config: AgentModelConfig) -> bool:
+    output_dir = RESULTS_DIR / config.slug
+    required_files = [
+        output_dir / "answers.md",
+        output_dir / "metrics.json",
+        output_dir / "latency_seconds.png",
+        output_dir / "token_usage_total.png",
+        output_dir / "citations_and_evidence.png",
+        output_dir / "fact_check_statuses.png",
+        output_dir / "judge_scores.json",
+        output_dir / "judge_scores.md",
+        output_dir / "judge_factual_accuracy.png",
+        output_dir / "judge_completeness.png",
+        output_dir / "judge_citation_quality.png",
+        output_dir / "judge_clarity.png",
+        output_dir / "judge_unsupported_claims.png",
+    ]
+    missing_files = [path.name for path in required_files if not path.exists()]
+    if missing_files:
+        logger.info("Experiment incomplete slug=%s missing_files=%s", config.slug, missing_files)
+        return False
+
+    metrics_payload = _read_json_dict(output_dir / "metrics.json")
+    if metrics_payload is None:
+        logger.info("Experiment incomplete slug=%s invalid metrics.json", config.slug)
+        return False
+
+    config_payload = metrics_payload.get("config")
+    if not isinstance(config_payload, dict) or not _config_payload_matches(config_payload, config):
+        logger.info("Experiment incomplete slug=%s config mismatch", config.slug)
+        return False
+
+    questions_payload = metrics_payload.get("questions")
+    if not _questions_payload_complete(questions_payload):
+        logger.info("Experiment incomplete slug=%s question payload mismatch", config.slug)
+        return False
+
+    judge_payload = _read_json_dict(output_dir / "judge_scores.json")
+    if judge_payload is None or not _judge_payload_complete(judge_payload):
+        logger.info("Experiment incomplete slug=%s judge payload mismatch", config.slug)
+        return False
+
+    return True
+
+
+def _read_json_dict(path: Path) -> dict[str, object] | None:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        logger.warning("Could not read JSON file path=%s error=%s", path, error)
+        return None
+    if not isinstance(payload, dict):
+        return None
+    return payload
+
+
+def _config_payload_matches(config_payload: dict[str, object], config: AgentModelConfig) -> bool:
+    expected = asdict(config)
+    return all(config_payload.get(key) == value for key, value in expected.items())
+
+
+def _questions_payload_complete(questions_payload: object) -> bool:
+    if not isinstance(questions_payload, list) or len(questions_payload) != len(QUESTIONS):
+        return False
+
+    seen_question_indices: set[int] = set()
+    for question_payload in questions_payload:
+        if not isinstance(question_payload, dict):
+            return False
+        question_index = _optional_int(question_payload.get("question_index"))
+        if question_index is None or question_index < 1 or question_index > len(QUESTIONS):
+            return False
+        if question_payload.get("question") != QUESTIONS[question_index - 1]:
+            return False
+        if question_payload.get("question_type") != _question_type(question_index):
+            return False
+        if not isinstance(question_payload.get("baseline_answer"), str):
+            return False
+        if not isinstance(question_payload.get("orchestrator_answer"), str):
+            return False
+        seen_question_indices.add(question_index)
+
+    return seen_question_indices == set(range(1, len(QUESTIONS) + 1))
+
+
+def _judge_payload_complete(judge_payload: dict[str, object]) -> bool:
+    expected_judge_model = os.getenv("JUDGE_MODEL", "gpt-5.1")
+    if judge_payload.get("judge_model") != expected_judge_model:
+        return False
+
+    scores = judge_payload.get("scores")
+    if not isinstance(scores, list):
+        return False
+
+    score_pairs = {
+        (_optional_int(score.get("question_index")) or 0, str(score.get("system", "")))
+        for score in scores
+        if isinstance(score, dict)
+    }
+    expected_pairs = {
+        (question_index, system)
+        for question_index in range(1, len(QUESTIONS) + 1)
+        for system in ("baseline", "multi_agent")
+    }
+    return expected_pairs.issubset(score_pairs)
 
 
 def _avg(values: list[float | int]) -> float:
@@ -1711,13 +1808,15 @@ async def main() -> None:
 
     all_experiment_configs = _experiment_configs(openai_settings)
     experiment_configs = _filter_experiment_configs(all_experiment_configs)
-    if not os.getenv("EXPERIMENT_SLUGS", "").strip():
-        _remove_stale_experiment_results(all_experiment_configs)
     logger.info("Loaded experiment configs count=%s", len(experiment_configs))
     for config in experiment_configs:
+        if _experiment_is_complete(config):
+            logger.info("Skipping completed experiment slug=%s output_dir=%s", config.slug, RESULTS_DIR / config.slug)
+            print(f"\nskipping completed experiment: {config.slug}")
+            continue
         logger.info("Dispatching experiment slug=%s", config.slug)
         await _run_agent_config_experiment(config, retriever, openai_settings)
-    _save_summary_results()
+    _save_summary_results(all_experiment_configs)
     logger.info("Experiment runner complete")
 
 

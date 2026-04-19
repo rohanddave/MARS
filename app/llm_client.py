@@ -15,7 +15,12 @@ class LLMClient:
     def __init__(self, settings: OpenAISettings) -> None:
         self.settings = settings
 
-    async def complete(self, prompt: str) -> CompletionResult:
+    async def complete(
+        self,
+        prompt: str,
+        instructions: str | None = None,
+        max_output_tokens: int | None = None,
+    ) -> CompletionResult:
         if not self.settings.openai_api_key:
             logger.warning("OpenAI API key is not configured; returning placeholder LLM response")
             return CompletionResult(
@@ -31,12 +36,13 @@ class LLMClient:
         )
         body = {
             "model": self.settings.openai_answer_model,
-            "instructions": (
+            "instructions": instructions
+            or (
                 "You answer questions about a code repository. Use only the supplied context. "
                 "When the context is insufficient, say what is missing instead of guessing."
             ),
             "input": prompt,
-            "max_output_tokens": self.settings.openai_answer_max_output_tokens,
+            "max_output_tokens": max_output_tokens or self.settings.openai_answer_max_output_tokens,
         }
 
         async with httpx.AsyncClient(timeout=self.settings.openai_timeout_seconds) as client:

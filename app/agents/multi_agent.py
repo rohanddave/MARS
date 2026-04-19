@@ -103,6 +103,7 @@ class OrchestratorAgent:
             query=query,
             evidence_notes=evidence_notes,
             fact_check=None,
+            draft=True,
         )
         logger.info("Orchestrator draft synthesis complete answer_chars=%s", len(draft_answer))
         fact_check, fact_usage = await self.fact_checking_agent.check(draft_answer, evidence_notes)
@@ -126,6 +127,7 @@ class OrchestratorAgent:
                 query=query,
                 evidence_notes=evidence_notes,
                 fact_check=fact_check,
+                draft=True,
             )
             fact_check, extra_fact_usage = await self.fact_checking_agent.check(draft_answer, evidence_notes)
             logger.info("Orchestrator extra retrieval complete total_evidence=%s notes=%s", len(evidence), len(evidence_notes))
@@ -147,6 +149,7 @@ class OrchestratorAgent:
             query=query,
             evidence_notes=evidence_notes,
             fact_check=fact_check,
+            draft=False,
         )
         logger.info("Orchestrator final synthesis complete answer_chars=%s total_tokens=%s", len(final_answer), _sum_usage(token_usage, final_usage).total_tokens)
 
@@ -273,10 +276,16 @@ class FactCheckingAgent:
 
     async def check(self, draft_answer: str, evidence_notes: list[EvidenceNote]) -> tuple[FactCheckReport, TokenUsage]:
         logger.info("Fact checking draft answer_chars=%s evidence_notes=%s", len(draft_answer), len(evidence_notes))
-        prompt = f"""Inspect this draft answer claim by claim against the evidence notes.
+        prompt = f"""Inspect this draft answer claim by claim against the evidence notes before the final answer is written.
 
-For each important claim, mark it supported, weakly_supported, or unsupported.
+Use strict definitions:
+- supported: the claim has at least one citation and the cited evidence directly supports the claim.
+- weakly_supported: the claim has a citation, but the evidence is indirect, incomplete, ambiguous, or only partially supports it.
+- unsupported: the claim has no citation, cites missing evidence, contradicts the evidence, or cannot be verified from the notes.
+
+Check every factual sentence. Do not give credit for a paragraph-level citation if a factual sentence itself lacks a citation.
 Ask for more retrieval if evidence is missing.
+When useful, recommend how the final answer should revise or remove weak/unsupported claims.
 
 Draft answer:
 {draft_answer}
@@ -304,20 +313,27 @@ class FinalSynthesisAgent:
         query: str,
         evidence_notes: list[EvidenceNote],
         fact_check: FactCheckReport | None,
+        draft: bool = False,
     ) -> tuple[str, TokenUsage]:
         logger.info(
-            "Final synthesis starting query_chars=%s evidence_notes=%s has_fact_check=%s",
+            "Final synthesis starting query_chars=%s evidence_notes=%s has_fact_check=%s draft=%s",
             len(query),
             len(evidence_notes),
             fact_check is not None,
+            draft,
         )
-        prompt = f"""Write a clean final answer to the question using the evidence notes.
+        answer_kind = "draft answer" if draft else "final answer"
+        prompt = f"""Write a clean {answer_kind} to the question using the evidence notes.
 
 Requirements:
-- Cite claims with evidence references like [E1], [E2].
+- Every factual sentence must include at least one evidence citation like [E1] or [E2].
+- Do not place citations only at the end of a paragraph; cite each factual sentence individually.
+- If no evidence supports a sentence, remove it or state the uncertainty with a citation to the closest relevant evidence.
 - Include uncertainty when evidence is weak, missing, or conflicting.
 - Do not use facts that are not supported by the evidence notes.
 - If the evidence is insufficient, say what is missing.
+- Do not invent evidence references. Only cite IDs that appear in the evidence notes.
+- Avoid broad comparative or causal claims unless directly supported by cited evidence.
 
 Question:
 {query}
@@ -402,7 +418,7 @@ def _build_fact_check_report(
 
     for claim in claims[:12]:
         claim_refs = sorted(ref for ref in refs if f"[{ref}]" in claim)
-        status: ClaimStatus = "supported" if claim_refs else "weakly_supported"
+        status: ClaimStatus = "supported" if claim_refs else "unsupported"
         if "not configured" in claim.lower() or "insufficient" in claim.lower():
             status = "unsupported"
         checks.append(
@@ -410,7 +426,7 @@ def _build_fact_check_report(
                 claim=claim,
                 status=status,
                 evidence_refs=claim_refs,
-                note="Claim has explicit evidence references." if claim_refs else "No explicit evidence reference found.",
+                note="Claim has explicit evidence references." if claim_refs else "No sentence-level evidence reference found.",
             )
         )
 

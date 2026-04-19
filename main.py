@@ -69,6 +69,8 @@ class QuestionRunMetrics:
     baseline_citation_count: int
     orchestrator_evidence_count: int
     fact_check_status_counts: dict[str, int]
+    baseline_evidence: list[dict[str, object]]
+    orchestrator_evidence: list[dict[str, object]]
     baseline_answer: str
     orchestrator_answer: str
 
@@ -200,6 +202,8 @@ async def _compare_question(
         baseline_citation_count=len(baseline_result.citations),
         orchestrator_evidence_count=len(orchestrator_result.evidence),
         fact_check_status_counts=status_counts,
+        baseline_evidence=_baseline_evidence_payload(baseline_result),
+        orchestrator_evidence=_orchestrator_evidence_payload(orchestrator_result),
         baseline_answer=baseline_result.answer,
         orchestrator_answer=orchestrator_result.answer,
     )
@@ -232,6 +236,7 @@ async def _run_agent_config_experiment(
         )
 
     output_dir = _save_experiment_results(config, metrics)
+    await _judge_experiment_results(output_dir, settings)
     logger.info("Finished experiment slug=%s output_dir=%s", config.slug, output_dir)
     print(f"\nsaved_results: {output_dir}")
 
@@ -348,6 +353,35 @@ def _fact_check_status_counts(result: MultiAgentAnswer) -> dict[str, int]:
     return status_counts
 
 
+def _baseline_evidence_payload(result: BaselineAgentResult) -> list[dict[str, object]]:
+    evidence: list[dict[str, object]] = []
+    for index, chunk in enumerate(result.retrieved_chunks, start=1):
+        source = chunk.metadata.get("source") or chunk.metadata.get("filename") or "unknown source"
+        evidence.append(
+            {
+                "citation_id": str(index),
+                "chunk_id": chunk.id,
+                "source": str(source),
+                "score": chunk.score,
+                "text": chunk.text,
+            }
+        )
+    return evidence
+
+
+def _orchestrator_evidence_payload(result: MultiAgentAnswer) -> list[dict[str, object]]:
+    return [
+        {
+            "citation_id": item.citation_id,
+            "chunk_id": item.chunk_id,
+            "source": item.source,
+            "score": item.score,
+            "text": item.text,
+        }
+        for item in result.evidence
+    ]
+
+
 def _print_model_config(settings: OpenAISettings) -> None:
     default_model = settings.openai_answer_model
     print("model_config")
@@ -359,6 +393,7 @@ def _print_model_config(settings: OpenAISettings) -> None:
     print(f"  final_synthesis: {_model_for('final_synthesis', default_model)}")
     print(f"  fast_agent: {os.getenv('FAST_AGENT_MODEL', default_model)}")
     print(f"  strong_agent: {os.getenv('STRONG_AGENT_MODEL', default_model)}")
+    print(f"  judge: {os.getenv('JUDGE_MODEL', 'gpt-5.1')}")
     print(f"  embedding: {settings.openai_embedding_model}")
 
 
@@ -565,6 +600,242 @@ def _question_labels(metrics: list[QuestionRunMetrics]) -> list[str]:
     return [f"Q{metric.question_index}" for metric in metrics]
 
 
+async def _judge_experiment_results(output_dir: Path, settings: OpenAISettings) -> None:
+    metrics_path = output_dir / "metrics.json"
+    if not metrics_path.exists():
+        logger.warning("No metrics file found for judge path=%s", metrics_path)
+        return
+
+    judge_model = os.getenv("JUDGE_MODEL", "gpt-5.1")
+    logger.info("Starting judge pass output_dir=%s judge_model=%s", output_dir, judge_model)
+    judge_client = _llm_client(settings, judge_model)
+
+    payload = json.loads(metrics_path.read_text(encoding="utf-8"))
+    questions = payload.get("questions") if isinstance(payload, dict) else None
+    if not isinstance(questions, list):
+        logger.warning("Metrics file does not contain question list path=%s", metrics_path)
+        return
+
+    scores: list[dict[str, object]] = []
+    for question in questions:
+        if not isinstance(question, dict):
+            continue
+        question_index = _optional_int(question.get("question_index")) or 0
+        question_text = str(question.get("question", ""))
+        logger.info("Judging experiment=%s question=%s baseline", output_dir.name, question_index)
+        scores.append(
+            await _judge_single_answer(
+                judge_client=judge_client,
+                judge_model=judge_model,
+                experiment_slug=output_dir.name,
+                system_name="baseline",
+                question_index=question_index,
+                question=question_text,
+                answer=str(question.get("baseline_answer", "")),
+                evidence=_list_of_dicts(question.get("baseline_evidence")),
+            )
+        )
+        logger.info("Judging experiment=%s question=%s multi_agent", output_dir.name, question_index)
+        scores.append(
+            await _judge_single_answer(
+                judge_client=judge_client,
+                judge_model=judge_model,
+                experiment_slug=output_dir.name,
+                system_name="multi_agent",
+                question_index=question_index,
+                question=question_text,
+                answer=str(question.get("orchestrator_answer", "")),
+                evidence=_list_of_dicts(question.get("orchestrator_evidence")),
+            )
+        )
+
+    _write_judge_scores(output_dir, judge_model, scores)
+    _plot_judge_scores(output_dir, scores)
+    logger.info("Judge pass complete output_dir=%s scores=%s", output_dir, len(scores))
+
+
+async def _judge_single_answer(
+    judge_client: LLMClient,
+    judge_model: str,
+    experiment_slug: str,
+    system_name: str,
+    question_index: int,
+    question: str,
+    answer: str,
+    evidence: list[dict[str, object]],
+) -> dict[str, object]:
+    evidence_text = _format_judge_evidence(evidence)
+    prompt = f"""Evaluate the answer against the question and provided evidence.
+
+Return only JSON with this exact shape:
+{{
+  "factual_accuracy": 1,
+  "completeness": 1,
+  "citation_quality": 1,
+  "clarity": 1,
+  "unsupported_claims": 0,
+  "rationale": "short explanation"
+}}
+
+Scoring:
+- factual_accuracy: 1-5, where 5 means all important claims are supported by the evidence.
+- completeness: 1-5, where 5 means the answer fully addresses the question.
+- citation_quality: 1-5, where 5 means citations are present, valid, specific, and tied to claims.
+- clarity: 1-5, where 5 means clear, well organized, and easy to follow.
+- unsupported_claims: count claims in the answer that are not supported by the evidence.
+
+Question:
+{question}
+
+Evidence:
+{evidence_text}
+
+Answer:
+{answer}
+"""
+    completion = await judge_client.complete(
+        prompt,
+        instructions=(
+            "You are an external research QA evaluator. Judge only against the provided evidence. "
+            "Be strict about unsupported claims and citation quality. Return valid JSON only."
+        ),
+        max_output_tokens=800,
+    )
+    parsed = _parse_judge_response(completion.text)
+    parsed.update(
+        {
+            "experiment_slug": experiment_slug,
+            "system": system_name,
+            "question_index": question_index,
+            "question": question,
+            "judge_model": judge_model,
+            "judge_token_usage": asdict(completion.token_usage),
+        }
+    )
+    return parsed
+
+
+def _parse_judge_response(text: str) -> dict[str, object]:
+    try:
+        payload = json.loads(_extract_json_object(text))
+    except json.JSONDecodeError:
+        logger.warning("Could not parse judge JSON response; using fallback scores text=%s", text[:500])
+        payload = {}
+
+    return {
+        "factual_accuracy": _clamp_score(payload.get("factual_accuracy")),
+        "completeness": _clamp_score(payload.get("completeness")),
+        "citation_quality": _clamp_score(payload.get("citation_quality")),
+        "clarity": _clamp_score(payload.get("clarity")),
+        "unsupported_claims": max(0, _optional_int(payload.get("unsupported_claims")) or 0),
+        "rationale": str(payload.get("rationale", "")),
+    }
+
+
+def _extract_json_object(text: str) -> str:
+    start = text.find("{")
+    end = text.rfind("}")
+    if start == -1 or end == -1 or end < start:
+        raise json.JSONDecodeError("No JSON object found", text, 0)
+    return text[start : end + 1]
+
+
+def _clamp_score(value: object) -> int:
+    if isinstance(value, bool):
+        return 1
+    if isinstance(value, (int, float)):
+        return min(5, max(1, int(round(value))))
+    return 1
+
+
+def _format_judge_evidence(evidence: list[dict[str, object]]) -> str:
+    if not evidence:
+        return "No evidence provided."
+    blocks: list[str] = []
+    for item in evidence[:12]:
+        citation_id = item.get("citation_id", "?")
+        source = item.get("source", "unknown source")
+        text = str(item.get("text", ""))[:2500]
+        blocks.append(f"[{citation_id}] source: {source}\n{text}")
+    return "\n\n".join(blocks)
+
+
+def _write_judge_scores(output_dir: Path, judge_model: str, scores: list[dict[str, object]]) -> None:
+    json_path = output_dir / "judge_scores.json"
+    json_path.write_text(json.dumps({"judge_model": judge_model, "scores": scores}, indent=2), encoding="utf-8")
+
+    lines = [
+        "# External Judge Scores",
+        "",
+        f"Judge model: `{judge_model}`",
+        "",
+        "| System | Question | Factual Accuracy | Completeness | Citation Quality | Clarity | Unsupported Claims |",
+        "|---|---:|---:|---:|---:|---:|---:|",
+    ]
+    for score in scores:
+        lines.append(
+            "| {system} | Q{question} | {factual} | {complete} | {citation} | {clarity} | {unsupported} |".format(
+                system=score["system"],
+                question=score["question_index"],
+                factual=score["factual_accuracy"],
+                complete=score["completeness"],
+                citation=score["citation_quality"],
+                clarity=score["clarity"],
+                unsupported=score["unsupported_claims"],
+            )
+        )
+    md_path = output_dir / "judge_scores.md"
+    md_path.write_text("\n".join(lines), encoding="utf-8")
+    logger.info("Wrote judge scores files json=%s markdown=%s", json_path, md_path)
+
+
+def _plot_judge_scores(output_dir: Path, scores: list[dict[str, object]]) -> None:
+    metrics = ["factual_accuracy", "completeness", "citation_quality", "clarity"]
+    for metric in metrics:
+        _bar_pair_plot(
+            output_path=output_dir / f"judge_{metric}.png",
+            title=f"Judge {metric.replace('_', ' ').title()}",
+            ylabel="score",
+            labels=_judge_question_labels(scores),
+            baseline_values=_judge_values(scores, "baseline", metric),
+            orchestrator_values=_judge_values(scores, "multi_agent", metric),
+        )
+    _bar_pair_plot(
+        output_path=output_dir / "judge_unsupported_claims.png",
+        title="Judge Unsupported Claims",
+        ylabel="count",
+        labels=_judge_question_labels(scores),
+        baseline_values=_judge_values(scores, "baseline", "unsupported_claims"),
+        orchestrator_values=_judge_values(scores, "multi_agent", "unsupported_claims"),
+    )
+
+
+def _judge_question_labels(scores: list[dict[str, object]]) -> list[str]:
+    question_ids = sorted({_optional_int(score.get("question_index")) or 0 for score in scores})
+    return [f"Q{question_id}" for question_id in question_ids]
+
+
+def _judge_values(scores: list[dict[str, object]], system: str, metric: str) -> list[float]:
+    values: list[float] = []
+    for question_id in sorted({_optional_int(score.get("question_index")) or 0 for score in scores}):
+        match = next(
+            (
+                score
+                for score in scores
+                if score.get("system") == system and (_optional_int(score.get("question_index")) or 0) == question_id
+            ),
+            None,
+        )
+        values.append(_float_value(match.get(metric)) if match else 0.0)
+    return values
+
+
+def _list_of_dicts(value: object) -> list[dict[str, object]]:
+    if not isinstance(value, list):
+        return []
+    return [item for item in value if isinstance(item, dict)]
+
+
 def _save_summary_results() -> None:
     logger.info("Generating cross-experiment summary from persisted metrics")
     experiment_metrics = _load_persisted_experiment_metrics()
@@ -578,13 +849,18 @@ def _save_summary_results() -> None:
         shutil.rmtree(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    rows = [_summarize_experiment(slug, payload) for slug, payload in experiment_metrics]
+    rows = []
+    for slug, payload in experiment_metrics:
+        row = _summarize_experiment(slug, payload)
+        _add_judge_summary(row, RESULTS_DIR / slug / "judge_scores.json")
+        rows.append(row)
     _write_summary_json(output_dir, rows)
     _write_summary_markdown(output_dir, rows)
     _plot_summary_latency(output_dir, rows)
     _plot_summary_token_usage(output_dir, rows)
     _plot_summary_citations(output_dir, rows)
     _plot_summary_fact_checks(output_dir, rows)
+    _plot_summary_judge_scores(output_dir, rows)
     logger.info("Summary results saved output_dir=%s experiments=%s", output_dir, len(rows))
 
 
@@ -645,6 +921,26 @@ def _summarize_experiment(slug: str, payload: dict[str, object]) -> dict[str, ob
     }
 
 
+def _add_judge_summary(row: dict[str, object], judge_path: Path) -> None:
+    if not judge_path.exists():
+        logger.warning("Judge scores not found for summary path=%s", judge_path)
+        return
+    try:
+        payload = json.loads(judge_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        logger.warning("Invalid judge scores JSON path=%s", judge_path)
+        return
+
+    scores = payload.get("scores") if isinstance(payload, dict) else None
+    if not isinstance(scores, list):
+        return
+    row["judge_model"] = str(payload.get("judge_model", ""))
+    for system in ("baseline", "multi_agent"):
+        system_scores = [score for score in scores if isinstance(score, dict) and score.get("system") == system]
+        for metric in ("factual_accuracy", "completeness", "citation_quality", "clarity", "unsupported_claims"):
+            row[f"judge_avg_{system}_{metric}"] = _avg([_float_value(score.get(metric)) for score in system_scores])
+
+
 def _write_summary_json(output_dir: Path, rows: list[dict[str, object]]) -> None:
     path = output_dir / "summary_metrics.json"
     path.write_text(json.dumps({"experiments": rows}, indent=2), encoding="utf-8")
@@ -686,9 +982,33 @@ def _write_summary_markdown(output_dir: Path, rows: list[dict[str, object]]) -> 
                 f"- summarization_model: {row['summarization_model']}",
                 f"- fact_check_model: {row['fact_check_model']}",
                 f"- final_synthesis_model: {row['final_synthesis_model']}",
+                f"- judge_model: {row.get('judge_model', '')}",
                 "",
             ]
         )
+
+    lines.extend(
+        [
+            "",
+            "## External Judge Averages",
+            "",
+            "| Experiment | System | Factual Accuracy | Completeness | Citation Quality | Clarity | Unsupported Claims |",
+            "|---|---|---:|---:|---:|---:|---:|",
+        ]
+    )
+    for row in rows:
+        for system in ("baseline", "multi_agent"):
+            lines.append(
+                "| {name} | {system} | {factual:.2f} | {complete:.2f} | {citation:.2f} | {clarity:.2f} | {unsupported:.2f} |".format(
+                    name=row["name"],
+                    system=system,
+                    factual=_float_value(row.get(f"judge_avg_{system}_factual_accuracy")),
+                    complete=_float_value(row.get(f"judge_avg_{system}_completeness")),
+                    citation=_float_value(row.get(f"judge_avg_{system}_citation_quality")),
+                    clarity=_float_value(row.get(f"judge_avg_{system}_clarity")),
+                    unsupported=_float_value(row.get(f"judge_avg_{system}_unsupported_claims")),
+                )
+            )
 
     path = output_dir / "summary.md"
     path.write_text("\n".join(lines), encoding="utf-8")
@@ -753,6 +1073,18 @@ def _plot_summary_fact_checks(output_dir: Path, rows: list[dict[str, object]]) -
     logger.info("Saved summary plot file=%s", output_dir / "avg_fact_check_statuses.png")
 
 
+def _plot_summary_judge_scores(output_dir: Path, rows: list[dict[str, object]]) -> None:
+    for metric in ("factual_accuracy", "completeness", "citation_quality", "clarity", "unsupported_claims"):
+        _bar_pair_plot(
+            output_path=output_dir / f"judge_avg_{metric}.png",
+            title=f"Average Judge {metric.replace('_', ' ').title()} Across Experiments",
+            ylabel="count" if metric == "unsupported_claims" else "score",
+            labels=_summary_labels(rows),
+            baseline_values=[_float_value(row.get(f"judge_avg_baseline_{metric}")) for row in rows],
+            orchestrator_values=[_float_value(row.get(f"judge_avg_multi_agent_{metric}")) for row in rows],
+        )
+
+
 def _summary_labels(rows: list[dict[str, object]]) -> list[str]:
     return [f"E{index}" for index, _ in enumerate(rows, start=1)]
 
@@ -761,6 +1093,14 @@ def _float_from_question(question: object, key: str) -> float:
     if not isinstance(question, dict):
         return 0.0
     value = question.get(key)
+    if isinstance(value, bool):
+        return 0.0
+    if isinstance(value, (int, float)):
+        return float(value)
+    return 0.0
+
+
+def _float_value(value: object) -> float:
     if isinstance(value, bool):
         return 0.0
     if isinstance(value, (int, float)):
@@ -859,9 +1199,9 @@ async def main() -> None:
     baseline_agent = build_baseline_agent(retriever, openai_settings)
 
     experiments: list[ExperimentFn] = [experiment1, experiment2, experiment3]
-    # for experiment in experiments:
-    #     logger.info("Dispatching experiment function=%s", experiment.__name__)
-    #     await experiment(baseline_agent, retriever, openai_settings)
+    for experiment in experiments:
+        logger.info("Dispatching experiment function=%s", experiment.__name__)
+        await experiment(baseline_agent, retriever, openai_settings)
     _save_summary_results()
     logger.info("Experiment runner complete")
 

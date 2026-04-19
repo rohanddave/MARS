@@ -16,26 +16,204 @@
       "question_index": 1,
       "question": "What is REALM and how does it differ from traditional language models like BERT in terms of knowledge storage and retrieval?",
       "top_k": 5,
-      "baseline_latency_seconds": 2.605754875,
-      "orchestrator_latency_seconds": 62.617433292,
+      "baseline_latency_seconds": 5.827936458,
+      "orchestrator_latency_seconds": 48.983409208,
       "baseline_token_usage": {
         "input_tokens": 790,
-        "output_tokens": 152,
-        "total_tokens": 942
+        "output_tokens": 162,
+        "total_tokens": 952
       },
       "orchestrator_token_usage": {
-        "input_tokens": 21740,
-        "output_tokens": 3215,
-        "total_tokens": 24955
+        "input_tokens": 18770,
+        "output_tokens": 2736,
+        "total_tokens": 21506
       },
       "baseline_citation_count": 5,
-      "orchestrator_evidence_count": 18,
+      "orchestrator_evidence_count": 20,
       "fact_check_status_counts": {
-        "weakly_supported": 6,
-        "supported": 2
+        "supported": 5
       },
-      "baseline_answer": "REALM (Retrieval-Augmented Language Model) is a novel framework that augments language model pre-training with a learned textual knowledge retriever. Unlike traditional language models like BERT, which store knowledge within their model parameters, REALM explicitly separates the storage and retrieval of world knowledge. It allows the model to retrieve relevant textual knowledge dynamically during inference rather than relying solely on the knowledge encoded in the parameters. This approach makes the role of external knowledge explicit and facilitates more effective use of up-to-date or large-scale textual information beyond what is statically encoded in the model's weights [1][2][3][4][5].\n\nCitations:  \n[1][2][3][4][5] data/2002.08909v1.pdf",
-      "orchestrator_answer": "REALM (Retrieval-Augmented Language Model) is a novel pre-training framework that enhances traditional language model pre-training by integrating a learned textual knowledge retriever. Unlike conventional models such as BERT, which store world knowledge implicitly and solely within their neural network parameters, REALM explicitly exposes this knowledge by requiring the model to retrieve relevant textual information from an external corpus\u2014such as Wikipedia\u2014during pre-training, fine-tuning, and inference [E1\u2013E17]. \n\nThis retrieval mechanism allows REALM to access and incorporate up-to-date and extensive information beyond what can be feasibly stored in model parameters, making the incorporation of world knowledge more interpretable and modular compared to traditional parameter-only approaches [E7, E9]. Furthermore, REALM\u2019s knowledge retriever is trained in an unsupervised manner using masked language modeling as the learning signal, with backpropagation performed through a retrieval step that considers millions of documents. This contrasts with traditional language models that rely solely on parameter storage of knowledge without explicit retrieval [E7]. \n\nIn summary, REALM differs from models like BERT by explicitly integrating an external knowledge retrieval step into language model pre-training, shifting from implicit knowledge stored in parameters to an explicit, retriever-based access to textual world knowledge [E1\u2013E17].\n\nNo conflicting evidence was found, and details on specific implementation or performance metrics beyond those cited here are not provided in the supplied evidence."
+      "baseline_evidence": [
+        {
+          "citation_id": "1",
+          "chunk_id": "2002.08909v1-73-c400c3c7dce704c45e999d16",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.72277004,
+          "text": "e a novel framework, Retrieval-Augmented\nLanguage Model (REALM) pre-training, which augments\nlanguage model pre-training algorithms with a learned tex-\ntual knowledge retriever . In contrast to models that store\nknowledge in their parameters, this approach explicitly ex-\nposes the role of world knowledge by asking the model to"
+        },
+        {
+          "citation_id": "2",
+          "chunk_id": "2002.08909v1-92-006a44dd9d154f2cf726767d",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.72273755,
+          "text": ", Retrieval-Augmented\nLanguage Model (REALM) pre-training, which augments\nlanguage model pre-training algorithms with a learned tex-\ntual knowledge retriever . In contrast to models that store\nknowledge in their parameters, this approach explicitly ex-\nposes the role of world knowledge by asking the model to"
+        },
+        {
+          "citation_id": "3",
+          "chunk_id": "2002.08909v1-85-e46d21d216aaf6bb414137f5",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.7215488,
+          "text": "amework, Retrieval-Augmented\nLanguage Model (REALM) pre-training, which augments\nlanguage model pre-training algorithms with a learned tex-\ntual knowledge retriever . In contrast to models that store\nknowledge in their parameters, this approach explicitly ex-\nposes the role of world knowledge by asking the model to"
+        },
+        {
+          "citation_id": "4",
+          "chunk_id": "2002.08909v1-74-f80fa1f123d2843de2a120bb",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.719286,
+          "text": "a novel framework, Retrieval-Augmented\nLanguage Model (REALM) pre-training, which augments\nlanguage model pre-training algorithms with a learned tex-\ntual knowledge retriever . In contrast to models that store\nknowledge in their parameters, this approach explicitly ex-\nposes the role of world knowledge by asking the model to"
+        },
+        {
+          "citation_id": "5",
+          "chunk_id": "2002.08909v1-75-b1af4fde93b942c4e78a5e8b",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.719286,
+          "text": "a novel framework, Retrieval-Augmented\nLanguage Model (REALM) pre-training, which augments\nlanguage model pre-training algorithms with a learned tex-\ntual knowledge retriever . In contrast to models that store\nknowledge in their parameters, this approach explicitly ex-\nposes the role of world knowledge by asking the model to"
+        }
+      ],
+      "orchestrator_evidence": [
+        {
+          "citation_id": "E18",
+          "chunk_id": "2002.08909v1-89-83382ff273948554e37fa78d",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.6663602,
+          "text": "ork, Retrieval-Augmented\nLanguage Model (REALM) pre-training, which augments\nlanguage model pre-training algorithms with a learned tex-\ntual knowledge retriever . In contrast to models that store\nknowledge in their parameters, this approach explicitly ex-\nposes the role of world knowledge by asking the model to"
+        },
+        {
+          "citation_id": "E19",
+          "chunk_id": "2002.08909v1-88-3002bf8ddf372aab4b564460",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.6633528,
+          "text": "work, Retrieval-Augmented\nLanguage Model (REALM) pre-training, which augments\nlanguage model pre-training algorithms with a learned tex-\ntual knowledge retriever . In contrast to models that store\nknowledge in their parameters, this approach explicitly ex-\nposes the role of world knowledge by asking the model to"
+        },
+        {
+          "citation_id": "E16",
+          "chunk_id": "2002.08909v1-111-2acc25db01d8ed4ff6165269",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.6614073,
+          "text": "ed\nLanguage Model (REALM) pre-training, which augments\nlanguage model pre-training algorithms with a learned tex-\ntual knowledge retriever . In contrast to models that store\nknowledge in their parameters, this approach explicitly ex-\nposes the role of world knowledge by asking the model to"
+        },
+        {
+          "citation_id": "E20",
+          "chunk_id": "2002.08909v1-96-78a625059ec17d2e129fb290",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.6598847,
+          "text": "trieval-Augmented\nLanguage Model (REALM) pre-training, which augments\nlanguage model pre-training algorithms with a learned tex-\ntual knowledge retriever . In contrast to models that store\nknowledge in their parameters, this approach explicitly ex-\nposes the role of world knowledge by asking the model to"
+        },
+        {
+          "citation_id": "E17",
+          "chunk_id": "2002.08909v1-107-150aeb9620b234b85b040fca",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.65526706,
+          "text": "mented\nLanguage Model (REALM) pre-training, which augments\nlanguage model pre-training algorithms with a learned tex-\ntual knowledge retriever . In contrast to models that store\nknowledge in their parameters, this approach explicitly ex-\nposes the role of world knowledge by asking the model to"
+        },
+        {
+          "citation_id": "E1",
+          "chunk_id": "2002.08909v1-108-d0a98fb8f35dd98e87c808d3",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.6532931,
+          "text": "ented\nLanguage Model (REALM) pre-training, which augments\nlanguage model pre-training algorithms with a learned tex-\ntual knowledge retriever . In contrast to models that store\nknowledge in their parameters, this approach explicitly ex-\nposes the role of world knowledge by asking the model to"
+        },
+        {
+          "citation_id": "E2",
+          "chunk_id": "2002.08909v1-115-f83f686536bd62e4ebdc5e5c",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.65273803,
+          "text": "anguage Model (REALM) pre-training, which augments\nlanguage model pre-training algorithms with a learned tex-\ntual knowledge retriever . In contrast to models that store\nknowledge in their parameters, this approach explicitly ex-\nposes the role of world knowledge by asking the model to"
+        },
+        {
+          "citation_id": "E3",
+          "chunk_id": "2002.08909v1-118-7936b47aa2ddecd9971d460d",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.65240467,
+          "text": "uage Model (REALM) pre-training, which augments\nlanguage model pre-training algorithms with a learned tex-\ntual knowledge retriever . In contrast to models that store\nknowledge in their parameters, this approach explicitly ex-\nposes the role of world knowledge by asking the model to"
+        },
+        {
+          "citation_id": "E4",
+          "chunk_id": "2002.08909v1-119-96069b9eed1fffe0c4c16974",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.65214884,
+          "text": "age Model (REALM) pre-training, which augments\nlanguage model pre-training algorithms with a learned tex-\ntual knowledge retriever . In contrast to models that store\nknowledge in their parameters, this approach explicitly ex-\nposes the role of world knowledge by asking the model to"
+        },
+        {
+          "citation_id": "E5",
+          "chunk_id": "2002.08909v1-98-4ed7c401e6edd9796f0c86de",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.6510571,
+          "text": "ieval-Augmented\nLanguage Model (REALM) pre-training, which augments\nlanguage model pre-training algorithms with a learned tex-\ntual knowledge retriever . In contrast to models that store\nknowledge in their parameters, this approach explicitly ex-\nposes the role of world knowledge by asking the model to"
+        },
+        {
+          "citation_id": "E11",
+          "chunk_id": "2002.08909v1-90-9820725d100678e96877f6c1",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.64423776,
+          "text": "rk, Retrieval-Augmented\nLanguage Model (REALM) pre-training, which augments\nlanguage model pre-training algorithms with a learned tex-\ntual knowledge retriever . In contrast to models that store\nknowledge in their parameters, this approach explicitly ex-\nposes the role of world knowledge by asking the model to"
+        },
+        {
+          "citation_id": "E12",
+          "chunk_id": "2002.08909v1-85-e46d21d216aaf6bb414137f5",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.6363361,
+          "text": "amework, Retrieval-Augmented\nLanguage Model (REALM) pre-training, which augments\nlanguage model pre-training algorithms with a learned tex-\ntual knowledge retriever . In contrast to models that store\nknowledge in their parameters, this approach explicitly ex-\nposes the role of world knowledge by asking the model to"
+        },
+        {
+          "citation_id": "E13",
+          "chunk_id": "2002.08909v1-91-9e266c44cdc0b70324e36559",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.636004,
+          "text": "k, Retrieval-Augmented\nLanguage Model (REALM) pre-training, which augments\nlanguage model pre-training algorithms with a learned tex-\ntual knowledge retriever . In contrast to models that store\nknowledge in their parameters, this approach explicitly ex-\nposes the role of world knowledge by asking the model to"
+        },
+        {
+          "citation_id": "E14",
+          "chunk_id": "2002.08909v1-92-006a44dd9d154f2cf726767d",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.6350672,
+          "text": ", Retrieval-Augmented\nLanguage Model (REALM) pre-training, which augments\nlanguage model pre-training algorithms with a learned tex-\ntual knowledge retriever . In contrast to models that store\nknowledge in their parameters, this approach explicitly ex-\nposes the role of world knowledge by asking the model to"
+        },
+        {
+          "citation_id": "E15",
+          "chunk_id": "2002.08909v1-79-6fe4f9b97c20eb90f84d301d",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.63443834,
+          "text": "vel framework, Retrieval-Augmented\nLanguage Model (REALM) pre-training, which augments\nlanguage model pre-training algorithms with a learned tex-\ntual knowledge retriever . In contrast to models that store\nknowledge in their parameters, this approach explicitly ex-\nposes the role of world knowledge by asking the model to"
+        },
+        {
+          "citation_id": "E6",
+          "chunk_id": "2002.08909v1-127-f62d77ec7c1efd0ed1cc9775",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.56973684,
+          "text": "l (REALM) pre-training, which augments\nlanguage model pre-training algorithms with a learned tex-\ntual knowledge retriever . In contrast to models that store\nknowledge in their parameters, this approach explicitly ex-\nposes the role of world knowledge by asking the model to"
+        },
+        {
+          "citation_id": "E7",
+          "chunk_id": "2002.08909v1-130-a9634275e2fa3ede6b2c2746",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.5672145,
+          "text": "REALM) pre-training, which augments\nlanguage model pre-training algorithms with a learned tex-\ntual knowledge retriever . In contrast to models that store\nknowledge in their parameters, this approach explicitly ex-\nposes the role of world knowledge by asking the model to"
+        },
+        {
+          "citation_id": "E8",
+          "chunk_id": "2002.08909v1-128-324433c70ad8d3b976fa36fa",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.5645112,
+          "text": "(REALM) pre-training, which augments\nlanguage model pre-training algorithms with a learned tex-\ntual knowledge retriever . In contrast to models that store\nknowledge in their parameters, this approach explicitly ex-\nposes the role of world knowledge by asking the model to"
+        },
+        {
+          "citation_id": "E9",
+          "chunk_id": "2002.08909v1-129-8177a2b0943d3e0aa0e65bb6",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.5645112,
+          "text": "(REALM) pre-training, which augments\nlanguage model pre-training algorithms with a learned tex-\ntual knowledge retriever . In contrast to models that store\nknowledge in their parameters, this approach explicitly ex-\nposes the role of world knowledge by asking the model to"
+        },
+        {
+          "citation_id": "E10",
+          "chunk_id": "2002.08909v1-122-0627397978ec9038cc1023f7",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.5642639,
+          "text": "Model (REALM) pre-training, which augments\nlanguage model pre-training algorithms with a learned tex-\ntual knowledge retriever . In contrast to models that store\nknowledge in their parameters, this approach explicitly ex-\nposes the role of world knowledge by asking the model to"
+        }
+      ],
+      "baseline_answer": "REALM (Retrieval-Augmented Language Model) is a novel framework that enhances language model pre-training algorithms by integrating a learned textual knowledge retriever. Unlike traditional language models like BERT that store knowledge implicitly within their parameters, REALM explicitly exposes and utilizes world knowledge by retrieving relevant textual information during processing rather than relying solely on internal parameter storage. This approach allows REALM to access and leverage external knowledge dynamically, which contrasts with the fixed knowledge encoded in the parameters of conventional models such as BERT[1][2][3][4][5].\n\nCitations:  \n[1][2][3][4][5] data/2002.08909v1.pdf, chunks 73.0, 74.0, 75.0, 85.0, 92.0",
+      "orchestrator_answer": "REALM (Retrieval-Augmented Language Model) is a language model pre-training method that enhances traditional language model training by incorporating a learned textual knowledge retriever [E1], [E2], [E3], [E4]. Unlike traditional language models that store knowledge implicitly and solely within their parameters, REALM explicitly incorporates world knowledge by prompting the model to retrieve relevant textual information from an external source during training [E5], [E6], [E7]. This approach differs fundamentally from models that embed knowledge only in their parameters by separating the storage of knowledge from the model parameters and instead involving a retrieval mechanism that accesses and uses external information, thereby explicitly exposing the role of world knowledge in the model\u2019s predictions [E8], [E9], [E10].\n\nThe evidence notes do not explicitly mention BERT by name; therefore, any direct comparison to BERT specifically is not supported by the provided evidence."
     },
     {
       "experiment_slug": "experiment1_balanced",
@@ -43,26 +221,226 @@
       "question_index": 2,
       "question": "Explain how the retrieve-then-predict framework works in REALM, including the role of the latent variable z and backpropagation through the retriever.",
       "top_k": 5,
-      "baseline_latency_seconds": 5.982215542000006,
-      "orchestrator_latency_seconds": 53.363505833000005,
+      "baseline_latency_seconds": 5.056247874999997,
+      "orchestrator_latency_seconds": 99.017863334,
       "baseline_token_usage": {
         "input_tokens": 2641,
         "output_tokens": 512,
         "total_tokens": 3153
       },
       "orchestrator_token_usage": {
-        "input_tokens": 17494,
-        "output_tokens": 3200,
-        "total_tokens": 20694
+        "input_tokens": 39541,
+        "output_tokens": 6804,
+        "total_tokens": 46345
       },
       "baseline_citation_count": 5,
-      "orchestrator_evidence_count": 14,
+      "orchestrator_evidence_count": 23,
       "fact_check_status_counts": {
-        "weakly_supported": 8,
-        "supported": 4
+        "supported": 10,
+        "unsupported": 1
       },
-      "baseline_answer": "The retrieve-then-predict framework in REALM works by decomposing the probability of generating an output \\( y \\) given an input \\( x \\) into two sequential steps involving a latent variable \\( z \\), which represents documents retrieved from a knowledge corpus \\( Z \\).\n\n1. **Retrieval Step:**\n   Given an input \\( x \\) (which can be a masked sentence during pre-training or a question during fine-tuning), REALM first samples or retrieves relevant documents \\( z \\) from the corpus \\( Z \\) according to a learned retrieval distribution \\( p(z | x) \\). This distribution is modeled via a neural knowledge retriever that computes a relevance score \\( f(x, z) \\) between \\( x \\) and each document \\( z \\) using dense vector embeddings and softmax normalization:\n\n   \\[\n   p(z | x) = \\frac{\\exp f(x, z)}{\\sum_{z'} \\exp f(x, z')}\n   \\]\n\n   where the relevance score \\( f(x, z) \\) is computed as the inner product of embedding vectors derived from BERT-style Transformers for both the input \\( x \\) and the document \\( z \\). Hence:\n\n   \\[\n   f(x, z) = \\text{Embed}_{\\text{input}}(x)^\\top \\text{Embed}_{\\text{doc}}(z)\n   \\]\n\n2. **Prediction Step:**\n   Conditioning on both the retrieved documents \\( z \\) and the original input \\( x \\), REALM predicts the output \\( y \\) with probability \\( p(y | z, x) \\).\n\n3. **Latent Variable Marginalization:**\n   Because multiple possible documents \\( z \\) could be relevant, \\( z \\) is treated as a latent variable, and the overall likelihood of generating \\( y \\) given \\( x \\) is marginalized over all documents:\n\n   \\[\n   p(y | x) = \\sum_{z \\in Z} p(y | z, x) p(z | x)\n   \\]\n\nThe latent variable \\( z \\) thus represents the retrieved knowledge document influencing the prediction.\n\n4. **Backpropagation Through the Retriever:**\n   Training REALM involves maximizing the likelihood \\( p(y | x) \\). The gradient of the log-likelihood with respect to the retriever\u2019s parameters \\(\\theta\\) is:\n\n   \\[\n   \\nabla \\log p(y | x) = \\sum_{z \\in Z} r",
-      "orchestrator_answer": "The retrieve-then-predict framework in REALM functions by augmenting standard language model pre-training algorithms with a learned textual knowledge retriever. This setup explicitly incorporates retrieval of relevant world knowledge from an external corpus during processing, contrasting with conventional language models that store knowledge solely within their parameters [E1, E2, E3, E4, E5, E8, E9].\n\nIn this framework, a latent variable \\( z \\) represents the retrieval of a document or textual snippet relevant to the input query \\( x \\). Although explicit, detailed descriptions of \\( z \\) as a latent retrieved document are limited in the evidence, the gradient derivations involving \\( z \\) in the REALM objective support this interpretation. The model\u2019s prediction depends on both the input \\( x \\) and the sampled latent retrieval \\( z \\), effectively decomposing the pre-training objective over these latent retrieved documents [E6]. However, the evidence for this decomposition is somewhat indirect and conceptual rather than fully explicit.\n\nA critical aspect of REALM\u2019s training is enabling backpropagation through the retriever. This is achieved by computing the gradient of the pre-training objective with respect to the retriever\u2019s parameters using conditional Bayes\u2019 rule. Specifically, the gradient can be expressed as \\(\\nabla \\log p(y \\mid x) = \\sum_z [p(z \\mid y, x) - p(z \\mid x)] \\nabla f(x, z)\\), where \\( y \\) is the target output and \\( f \\) represents the model's scoring function. This formulation allows gradient-based updates to the retriever by comparing the posterior distribution over retrieved documents given the target versus the prior retrieval distribution [E6].\n\nIn summary, REALM\u2019s retrieve-then-predict architecture explicitly models retrieval as a latent variable \\( z \\), conditions predictions on retrieved texts, and trains the retriever end-to-end via backpropagation using conditional Bayes\u2019 rule to effectively integrate retrieval into language model pre-training. The available evidence supports these key mechanisms but lacks a fully detailed step-by-step explanation of \\( z \\)\u2019s role and the objective\u2019s decomposition, indicating some uncertainty in those details."
+      "baseline_evidence": [
+        {
+          "citation_id": "1",
+          "chunk_id": "2002.08909v1-803-63aae46f15da58bb4df66a88",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.6247589,
+          "text": "[Page 3]\nREALM: Retrieval-Augmented Language Model Pre-Training\nels comprehend a single document, Open-QA models must\nretain knowledge from millions of documents, since a ques-\ntion could be about any of them.\nWe focus on Open-QA systems that utilize a textual knowl-\nedge corpus Z as the knowledge source. Many of these\nsystems employ a retrieval-based approach: given a ques-\ntion x, retrieve potentially relevant documents z from\nthe corpus Z, and then extract an answer y from the\ndocuments (\nBrill et al., 2002; Chen et al. , 2017; Lee et al. ,\n2019). Our approach, REALM, is inspired by this\nparadigm and extends it to language model pre-training.\nAlternatively, some recent work has proposed generation-\nbased systems that apply a sequence-to-sequence model on\nx to directly generate y token-by-token (Lewis et al., 2019;\nRaffel et al., 2019). We will compare against state-of-the-\nart systems from both paradigms in our experiments.\n3. Approach\nWe start by formalizing REALM\u2019s pre-training and \ufb01ne-\ntuning tasks as a retrieve-then-predict generative process\nin Section\n3.1. Then in Section 3.2, we describe the model\narchitectures for each component of that process. In Sec-\ntion\n3.3, we show how to implement REALM pre-training\nand \ufb01ne-tuning by maximizing the likelihood of REALM\u2019s\ngenerative process. En route, we address important compu-\ntational challenges, explain why training works, and also\ndiscuss strategies for injecting useful inductive biases. The\noverall framework is illustrated in Figure\n2.\n3.1. REALM\u2019s generative process\nFor both pre-training and \ufb01ne-tuning, REALM takes some\ninput x and learns a distribution p(y |x) over possible out-\nputs y. For pre-training, the task is masked language mod-\neling: x is a sentence from a pre-training corpus X with\nsome tokens masked out, and the model must predict the\nvalue of those missing tokens, y. For \ufb01ne-tuning, the task\nis Open-QA: x is a question, and y is the answer.\nREALM decomposes p(y |x) into two steps: retrieve, then\npredict. Given an input x, we \ufb01rst retrieve possibly helpful\ndocuments z from a knowledge corpus Z. We model this as\na sample from the distribution p(z |x). Then, we condition\non both the retrieved z and the original input x to generate\nthe output y\u2014modeled as p(y |z, x). To obtain the overall\nlikelihood of generating y, we treat z as a latent variable\nand marginalize over all possible documents z, yielding\np(y |x) =\n\u2211\nz\u2208Z\np(y |z, x) p(z |x). (1)\n3.2. Model architecture\nWe now describe the two key components: the\nneural knowledge retriever , which models p(z |x),\nand the knowledge-augmented encoder , which models\np(y |z, x).\nKnowledge Retriever The retriever is de\ufb01ned using a\ndense inner product model:\np(z |x) = exp f (x, z)\n\u2211\nz\u2032 exp f (x, z\u2032) ,\nf (x, z) = Embedinput(x)\u22a4 Embeddoc(z),\nwhere Embedinput and Embeddoc are embedding functions\nthat map x and z respectively to d-dimensional vectors.\nThe relevance score f (x, z) between x and z is de\ufb01ned as\nthe inner product of the vector embeddings. The retrieval\ndistribution is the softmax over all relevance scores.\nWe implement the embedding functions using BERT-style\nTransformers (\nDevlin et al., 2018). Following standard\npractices, we join spans of text by applying wordpiece tok-\nenization, separating them with [SEP] tokens, pre\ufb01xing a\n[CLS] token, and appending a \ufb01nal [SEP] token.\njoinBERT(x) = [CLS]x[SEP]\njoinBERT(x1, x2) = [CLS]x1[SEP]x2[SEP]\nAs in\nDevlin et al. (2018), we pass this into a Transformer,\nwhich produces one vector for each token, including the\nvector corresponding to [CLS] which is used as a \u201cpooled\u201d\nrepresentation of the sequence (denoted BERTCLS). Finally,\nwe perform a linear projection to reduce the dimensionality\nof the vector, denoted as a projection matrix W:\nEmbedinput(x) = WinputBERTCLS(joinBERT(x))\nEmbeddoc(z) = WdocBERTCLS(joinBERT(ztitle, zbody))\nwhere ztitle is the document\u2019s title and zbody is its body."
+        },
+        {
+          "citation_id": "2",
+          "chunk_id": "2002.08909v1-80-51ef8c3bce71f0be91f0b726",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.61167234,
+          "text": "el framework, Retrieval-Augmented\nLanguage Model (REALM) pre-training, which augments\nlanguage model pre-training algorithms with a learned tex-\ntual knowledge retriever . In contrast to models that store\nknowledge in their parameters, this approach explicitly ex-\nposes the role of world knowledge by asking the model to"
+        },
+        {
+          "citation_id": "3",
+          "chunk_id": "2002.08909v1-81-00140d398ca42b7bbdd66654",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.61096185,
+          "text": "l framework, Retrieval-Augmented\nLanguage Model (REALM) pre-training, which augments\nlanguage model pre-training algorithms with a learned tex-\ntual knowledge retriever . In contrast to models that store\nknowledge in their parameters, this approach explicitly ex-\nposes the role of world knowledge by asking the model to"
+        },
+        {
+          "citation_id": "4",
+          "chunk_id": "2002.08909v1-57-dad23cf2b313854fe4e456f3",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.6054899,
+          "text": "r\nway, we propose a novel framework, Retrieval-Augmented\nLanguage Model (REALM) pre-training, which augments\nlanguage model pre-training algorithms with a learned tex-\ntual knowledge retriever . In contrast to models that store\nknowledge in their parameters, this approach explicitly ex-\nposes the role of world knowledge by asking the model to"
+        },
+        {
+          "citation_id": "5",
+          "chunk_id": "2002.08909v1-1585-3c15fbe789d5ba47b3398302",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.60530126,
+          "text": "[Page 5]\nREALM: Retrieval-Augmented Language Model Pre-Training\nFigure 3. REALM pre-training with asynchronous MIPS re-\nfreshes.\nbelow, the trainer sends the index builder a snapshot of its\nparameters, \u03b8\u2032. The trainer then continues to train while the\nindex builder uses \u03b8\u2032 to construct a new index in the back-\nground. As soon as the index builder is done, it sends the\nnew index back to the trainer, and the process repeats.\nWhile asynchronous refreshes can be used for both pre-\ntraining and \ufb01ne-tuning, in our experiments we only use it\nfor pre-training. For \ufb01ne-tuning, we just build the MIPS in-\ndex once (using the pre-trained \u03b8) for simplicity and do not\nupdate Embeddoc.\n3 Note that we still \ufb01ne-tune Embedinput,\nso the retrieval function is still updated from the query sid e.\nWhat does the retriever learn? Since the knowledge re-\ntrieval of REALM is latent, it is not obvious how the train-\ning objective encourages meaningful retrievals. Here, we\nshow how it rewards retrievals that improve prediction ac-\ncuracy.\nFor a given query x and document z, recall that f (x, z) is\nthe \u201crelevance score\u201d that the knowledge retriever assigns\nto document z. We can see how a single step of gradient\ndescent during REALM pre-training alters this score by an-\nalyzing the gradient with respect to the parameters of the\nknowledge retriever, \u03b8:\n\u2207 log p(y |x) =\n\u2211\nz\u2208Z\nr(z)\u2207 f (x, z)\nr(z) =\n[p(y |z, x)\np(y |x) \u2212 1\n]\np(z |x).\nFor each document z, the gradient encourages the retriever\nto change the score f (x, z) by r(z) \u2014 increasing if r(z)\nis positive, and decreasing if negative. The multiplier r(z)\nis positive if and only if p(y |z, x) > p (y |x). The term\np(y |z, x) is the probability of predicting the correct output\ny when using document z. The term p(y |x) is the expected\nvalue of p(y |x, z) when randomly sampling a document\nfrom p(z |x). Hence, document z receives a positive up-\ndate whenever it performs better than expected.\n3This works because pre-training already yields a good\nEmbeddoc function. However, it is possible that refreshing the in-\ndex would further improve performance.\n3.4. Injecting inductive biases into pre-training\nIn the process of developing REALM, we discovered sev-\neral additional strategies that further guide the model to-\nwards meaningful retrievals, described below.\nSalient span masking During REALM pre-training, we\nwant to focus on examples x that require world knowledge\nto predict the masked tokens. As explained in Section\n2,\nsome MLM spans only require local context. To focus on\nproblems that require world knowledge, we mask salient\nspans such as \u201c United Kingdom \u201d or \u201c July 1969 \u201d. We\nuse a BERT-based tagger trained on CoNLL-2003 data\n(\nSang & De Meulder , 2003) to identify named entities, and\na regular expression to identify dates. We select and mask\none of these salient spans within a sentence for the masked\nlanguage modeling task. We show that this signi\ufb01cantly\noutperforms other masking strategies in Section\n4.5.\nNull document Even with salient span masking, not all\nmasked tokens require world knowledge to predict. We\nmodel this by adding an empty null document \u2205 to the top\nk retrieved documents, allowing appropriate credit to be as-\nsigned to a consistent sink when no retrieval is necessary.\nProhibiting trivial retrievals If the pre-training corpus\nX and the knowledge corpus Z are the same, there exists\na trivial retrieval candidate z that is too informative: if the\nmasked sentence x comes from document z, the knowledge\naugmented encoder can trivially predict y by looking at the\nunmasked version of x in z. This results in a large positive\ngradient for p(z |x). If this occurs too often, the knowledge\nretriever ends up learning to look for exact string matches\nbetween x and z, which does not capture other forms of\nrelevance."
+        }
+      ],
+      "orchestrator_evidence": [
+        {
+          "citation_id": "E1",
+          "chunk_id": "2002.08909v1-80-51ef8c3bce71f0be91f0b726",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.6139446,
+          "text": "el framework, Retrieval-Augmented\nLanguage Model (REALM) pre-training, which augments\nlanguage model pre-training algorithms with a learned tex-\ntual knowledge retriever . In contrast to models that store\nknowledge in their parameters, this approach explicitly ex-\nposes the role of world knowledge by asking the model to"
+        },
+        {
+          "citation_id": "E2",
+          "chunk_id": "2002.08909v1-82-cb1cf632f9396f6a47be080b",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.59604394,
+          "text": "framework, Retrieval-Augmented\nLanguage Model (REALM) pre-training, which augments\nlanguage model pre-training algorithms with a learned tex-\ntual knowledge retriever . In contrast to models that store\nknowledge in their parameters, this approach explicitly ex-\nposes the role of world knowledge by asking the model to"
+        },
+        {
+          "citation_id": "E3",
+          "chunk_id": "2002.08909v1-83-03568c5c1fca0a0a6ffe1846",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.59604394,
+          "text": "framework, Retrieval-Augmented\nLanguage Model (REALM) pre-training, which augments\nlanguage model pre-training algorithms with a learned tex-\ntual knowledge retriever . In contrast to models that store\nknowledge in their parameters, this approach explicitly ex-\nposes the role of world knowledge by asking the model to"
+        },
+        {
+          "citation_id": "E4",
+          "chunk_id": "2002.08909v1-81-00140d398ca42b7bbdd66654",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.59598947,
+          "text": "l framework, Retrieval-Augmented\nLanguage Model (REALM) pre-training, which augments\nlanguage model pre-training algorithms with a learned tex-\ntual knowledge retriever . In contrast to models that store\nknowledge in their parameters, this approach explicitly ex-\nposes the role of world knowledge by asking the model to"
+        },
+        {
+          "citation_id": "E5",
+          "chunk_id": "2002.08909v1-2519-85845dc0e72f4b186049157c",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.59559107,
+          "text": "ponents of REALM. In addition\nto the end-to-end results, we also report how often the gold\nanswer appears in the top-5 retrievals before applying any\n\ufb01ne-tuning. The latter metric more signi\ufb01cantly isolates the\ncontribution of improving the retriever during pre-traini ng."
+        },
+        {
+          "citation_id": "E6",
+          "chunk_id": "2002.08909v1-79-6fe4f9b97c20eb90f84d301d",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.5920361,
+          "text": "vel framework, Retrieval-Augmented\nLanguage Model (REALM) pre-training, which augments\nlanguage model pre-training algorithms with a learned tex-\ntual knowledge retriever . In contrast to models that store\nknowledge in their parameters, this approach explicitly ex-\nposes the role of world knowledge by asking the model to"
+        },
+        {
+          "citation_id": "E7",
+          "chunk_id": "2002.08909v1-2518-40f35fc54171c7553cbc11d1",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.5884985,
+          "text": "mponents of REALM. In addition\nto the end-to-end results, we also report how often the gold\nanswer appears in the top-5 retrievals before applying any\n\ufb01ne-tuning. The latter metric more signi\ufb01cantly isolates the\ncontribution of improving the retriever during pre-traini ng."
+        },
+        {
+          "citation_id": "E8",
+          "chunk_id": "2002.08909v1-2514-cb13cbd7619045e5cc41c805",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.5856012,
+          "text": "l components of REALM. In addition\nto the end-to-end results, we also report how often the gold\nanswer appears in the top-5 retrievals before applying any\n\ufb01ne-tuning. The latter metric more signi\ufb01cantly isolates the\ncontribution of improving the retriever during pre-traini ng."
+        },
+        {
+          "citation_id": "E9",
+          "chunk_id": "2002.08909v1-2515-ae82d984a290fbec4045dab2",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.58358127,
+          "text": "components of REALM. In addition\nto the end-to-end results, we also report how often the gold\nanswer appears in the top-5 retrievals before applying any\n\ufb01ne-tuning. The latter metric more signi\ufb01cantly isolates the\ncontribution of improving the retriever during pre-traini ng."
+        },
+        {
+          "citation_id": "E10",
+          "chunk_id": "2002.08909v1-2516-3bc1aec1953debf7d09c5193",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.58358127,
+          "text": "components of REALM. In addition\nto the end-to-end results, we also report how often the gold\nanswer appears in the top-5 retrievals before applying any\n\ufb01ne-tuning. The latter metric more signi\ufb01cantly isolates the\ncontribution of improving the retriever during pre-traini ng."
+        },
+        {
+          "citation_id": "E11",
+          "chunk_id": "2002.08909v1-3838-b6bf67a81ccd6923f7dc94ff",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.4784732,
+          "text": "rks. In Advances in neural information\nprocessing systems, 2015.\nWeston, J., Chopra, S., and Bordes, A. Memory networks.\narXiv preprint arXiv:1410.3916 , 2014.\n\n[Page 11]\nREALM: Retrieval-Augmented Language Model Pre-Training\nA. Derivation of the gradient with respect to\nthe knowledge retriever\nWe compute the gradient of the REALM pre-training objec-\ntive (a log-likelihood) with respect to the parameters of th e\nknowledge retriever, \u03b8:\n\u2207 log p(y |x) = p(y |x)\u2212 1\u2207 p(y |x)\n= p(y |x)\u2212 1 \u2211\nz\np(y |z, x)\u2207 p(z |x)\n= p(y |x)\u2212 1 \u2211\nz\np(y |z, x)p(z |x)\u2207 log p(z |x)\n=\n\u2211\nz\np(z |y, x)\u2207 log p(z |x),\nwhere the last line follows from applying conditional\nBayes\u2019 rule. We can then expand \u2207 log p (z |x) as:\n\u2207 log p(z |x) = \u2207 log exp f (x, z)\u2211\nz\u2032 exp f (x, z\u2032)\n= \u2207\n[\nf (x, z) \u2212 log\n\u2211\nz\u2032\nexp f (x, z\u2032)\n]\n= \u2207 f (x, z) \u2212\n\u2211\nz\u2032\np(z\u2032|x)\u2207 f (x, z\u2032)\nPlugging this back into the \ufb01rst set of equations yields:\n\u2207 log p (y |x) =\n\u2211\nz\np (z |y, x)\n[\n\u2207 f (x, z) \u2212\n\u2211\nz\u2032\np (z\u2032|x) \u2207 f (x, z\u2032)\n]\n=\n\u2211\nz\np (z |y, x) \u2207 f (x, z) \u2212\n\u2211\nz\u2032\np (z\u2032|x) \u2207 f (x, z\u2032)\n=\n\u2211\nz\n[p (z |y, x) \u2212 p (z |x)] \u2207 f (x, z)\n=\n\u2211\nz\n[p (y |z, x) p (z |x)\np (y |x) \u2212 p (z |x)\n]\n\u2207 f (x, z)\n=\n\u2211\nz\n[p (y |z, x)\np (y |x) \u2212 1\n]\np (z |x) \u2207 f (x, z).\nIn the second line, we used the fact that the overall expres-\nsion is an expectation with respect to p (z |y, x), and the\nterms which depend on z\u2032 but not z can be moved out of\nthat expectation.\nB. Connection between REALM and\nsupervised learning\nFrom the equations in Appendix A, we saw that\n\u2207 log p (y |x) =\n\u2211\nz\n[p (z |y, x) \u2212 p (z |x)] \u2207 f (x, z).\nSuppose that there exists one document z\u2217 which causes\nthe model to achieve perfect prediction accuracy (i.e.,\np (y |z\u2217 , x) = 1 ), while all other documents z\u2032 result in\nzero accuracy (i.e., p (y |z\u2032, x) = 0 ). Under this set-\nting, p (z\u2217 |y, x) = 1 (provided that p (z\u2217 |x) is non-zero),\nwhich causes the gradient to become\n\u2207 log p (y |x) = \u2207 f (x, z\u2217) \u2212\n\u2211\nz\np (z |x) \u2207 f (x, z)\n= \u2207 log p (z\u2217 |x) .\nFrom this, we see that gradient descent on the REALM ob-\njective is equivalent to gradient descent on log p (z\u2217 |x).\nThis is none other than the typical maximum likelihood\ntraining objective used in supervised learning, where z\u2217 is\nthe \u201cgold\u201d document.\nC. Adapting to new knowledge\nAn explicit retrieval system allows us to adapt to new\nworld knowledge simply by modifying the corpus docu-\nments. To demonstrate this ability, we replace the knowl-\nedge corpus with a more recent version of Wikipedia cor-\npus after pre-training is done. When the input query is\nabout a fact where the two corpora disagree, REALM can\nchange the prediction to re\ufb02ect the updated information,\nas exempli\ufb01ed in Table\n4. However, even with an ex-\nplicit retrieval mechanism, the knowledge-augmented en-\ncoder will still end up remembering some world knowl-\nedge, making the prediction of some input sentences not\nupdated with the new corpus. (For instance, the model pre-\ndicts \u201c Thatcher\u201d for \u201c\nis the prime minister\nof United Kingdom. \u201d on both corpora, perhaps due to\nthe frequent mention of her name in Wikipedia articles.)\nD. Retrieval Utility\nThe null document \u2205 described in Section\n3.4 provides a\nway to measure the importance of a retrieved document z:\nwe de\ufb01ne the retrieval utility (RU) of z for the masked\ninput x as the difference between the log-likelihood of\nthe knowledge-augmented encoder when conditioning on\nz versus on \u2205:\nRU(z |x) = log p(y |z, x) \u2212 log p(y |\u2205, x). (2)\nA negative RU shows that z is less useful for predicting y\nthan the null document. This could mean that z is irrelevant\nto x, but could also mean that the masked tokens in x do\nnot require world knowledge to predict, or that the world\nknowledge is suf\ufb01ciently commonplace it has been baked\ninto the model\u2019s parameters. In practice, we \ufb01nd that RU\nincreases steadily over the course of pre-training, and is\nmore predictive of good performance on the downstream\ntask of Open-QA than even the overall log-likelihood. An\nexample of how RU behaves over time and across different\nsettings is in Figure\n4."
+        },
+        {
+          "citation_id": "E12",
+          "chunk_id": "2002.08909v1-98-4ed7c401e6edd9796f0c86de",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.47422716,
+          "text": "ieval-Augmented\nLanguage Model (REALM) pre-training, which augments\nlanguage model pre-training algorithms with a learned tex-\ntual knowledge retriever . In contrast to models that store\nknowledge in their parameters, this approach explicitly ex-\nposes the role of world knowledge by asking the model to"
+        },
+        {
+          "citation_id": "E13",
+          "chunk_id": "2002.08909v1-3839-79739cdc409b3871b73256d1",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.47201824,
+          "text": "wledge to predict, or that the world\nknowledge is suf\ufb01ciently commonplace it has been baked\ninto the model\u2019s parameters. In practice, we \ufb01nd that RU\nincreases steadily over the course of pre-training, and is\nmore predictive of good performance on the downstream\ntask of Open-QA than even the overall log-likelihood. An\nexample of how RU behaves over time and across different\nsettings is in Figure\n4.\n\n[Page 12]\nREALM: Retrieval-Augmented Language Model Pre-Training\nx: \u201c Jennifer formed the production company Excellent Cadaver. \u201d\nBERT also (0.13), then (0.08), later (0.05), . . .\nREALM (Z =20 Dec 2018 corpus) smith (0.01), brown (0.01), jones (0.01 )\nREALM ( Z =20 Jan 2020 corpus) lawrence (0.13), brown (0.01), smith (0.01), . . .\nTable 4. An example where REALM adapts to the updated knowledge corpu s. The Wikipedia page \u201cExcellent Cadaver\u201d was added in\n2019, so the model was not about to recover the word when the kn owledge corpus is outdated (2018). Interestingly, the same REALM\nmodel pre-trained on the 2018 corpus is able to retrieve the d ocument in the updated corpus (2020) and generate the correc t token,\n\u201cLawrence\u201d.\n0 50 100 150 200\n0\n1\n2\n3\nPre-training Steps (Thousands)\nRetrieval Utility\nSalient span masking\nRandom span masking\nRandom uniform masking\nFigure 4. The Retrieval Utility (RU, described in Eq. 2) vs the number of pre-training steps. RU roughly estimates t he \u201cusefulness\u201d of\nretrieval. RU is impacted by the choice of masking and the num ber of pre-training steps."
+        },
+        {
+          "citation_id": "E14",
+          "chunk_id": "2002.08909v1-803-63aae46f15da58bb4df66a88",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.46446952,
+          "text": "[Page 3]\nREALM: Retrieval-Augmented Language Model Pre-Training\nels comprehend a single document, Open-QA models must\nretain knowledge from millions of documents, since a ques-\ntion could be about any of them.\nWe focus on Open-QA systems that utilize a textual knowl-\nedge corpus Z as the knowledge source. Many of these\nsystems employ a retrieval-based approach: given a ques-\ntion x, retrieve potentially relevant documents z from\nthe corpus Z, and then extract an answer y from the\ndocuments (\nBrill et al., 2002; Chen et al. , 2017; Lee et al. ,\n2019). Our approach, REALM, is inspired by this\nparadigm and extends it to language model pre-training.\nAlternatively, some recent work has proposed generation-\nbased systems that apply a sequence-to-sequence model on\nx to directly generate y token-by-token (Lewis et al., 2019;\nRaffel et al., 2019). We will compare against state-of-the-\nart systems from both paradigms in our experiments.\n3. Approach\nWe start by formalizing REALM\u2019s pre-training and \ufb01ne-\ntuning tasks as a retrieve-then-predict generative process\nin Section\n3.1. Then in Section 3.2, we describe the model\narchitectures for each component of that process. In Sec-\ntion\n3.3, we show how to implement REALM pre-training\nand \ufb01ne-tuning by maximizing the likelihood of REALM\u2019s\ngenerative process. En route, we address important compu-\ntational challenges, explain why training works, and also\ndiscuss strategies for injecting useful inductive biases. The\noverall framework is illustrated in Figure\n2.\n3.1. REALM\u2019s generative process\nFor both pre-training and \ufb01ne-tuning, REALM takes some\ninput x and learns a distribution p(y |x) over possible out-\nputs y. For pre-training, the task is masked language mod-\neling: x is a sentence from a pre-training corpus X with\nsome tokens masked out, and the model must predict the\nvalue of those missing tokens, y. For \ufb01ne-tuning, the task\nis Open-QA: x is a question, and y is the answer.\nREALM decomposes p(y |x) into two steps: retrieve, then\npredict. Given an input x, we \ufb01rst retrieve possibly helpful\ndocuments z from a knowledge corpus Z. We model this as\na sample from the distribution p(z |x). Then, we condition\non both the retrieved z and the original input x to generate\nthe output y\u2014modeled as p(y |z, x). To obtain the overall\nlikelihood of generating y, we treat z as a latent variable\nand marginalize over all possible documents z, yielding\np(y |x) =\n\u2211\nz\u2208Z\np(y |z, x) p(z |x). (1)\n3.2. Model architecture\nWe now describe the two key components: the\nneural knowledge retriever , which models p(z |x),\nand the knowledge-augmented encoder , which models\np(y |z, x).\nKnowledge Retriever The retriever is de\ufb01ned using a\ndense inner product model:\np(z |x) = exp f (x, z)\n\u2211\nz\u2032 exp f (x, z\u2032) ,\nf (x, z) = Embedinput(x)\u22a4 Embeddoc(z),\nwhere Embedinput and Embeddoc are embedding functions\nthat map x and z respectively to d-dimensional vectors.\nThe relevance score f (x, z) between x and z is de\ufb01ned as\nthe inner product of the vector embeddings. The retrieval\ndistribution is the softmax over all relevance scores.\nWe implement the embedding functions using BERT-style\nTransformers (\nDevlin et al., 2018). Following standard\npractices, we join spans of text by applying wordpiece tok-\nenization, separating them with [SEP] tokens, pre\ufb01xing a\n[CLS] token, and appending a \ufb01nal [SEP] token.\njoinBERT(x) = [CLS]x[SEP]\njoinBERT(x1, x2) = [CLS]x1[SEP]x2[SEP]\nAs in\nDevlin et al. (2018), we pass this into a Transformer,\nwhich produces one vector for each token, including the\nvector corresponding to [CLS] which is used as a \u201cpooled\u201d\nrepresentation of the sequence (denoted BERTCLS). Finally,\nwe perform a linear projection to reduce the dimensionality\nof the vector, denoted as a projection matrix W:\nEmbedinput(x) = WinputBERTCLS(joinBERT(x))\nEmbeddoc(z) = WdocBERTCLS(joinBERT(ztitle, zbody))\nwhere ztitle is the document\u2019s title and zbody is its body."
+        },
+        {
+          "citation_id": "E15",
+          "chunk_id": "2002.08909v1-2791-bdd5ccd465f1f4c5af8b01df",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.46406102,
+          "text": "[Page 8]\nREALM: Retrieval-Augmented Language Model Pre-Training\nTable 3. An example where REALM utilizes retrieved documents to bett er predict masked tokens. It assigns much higher probabilit y\n(0.129) to the correct term, \u201c Fermat\u201d, compared to BERT. (Note that the blank corresponds to 3 BER T wordpieces.)\nx: An equilateral triangle is easily constructed using a stra ightedge and compass, because 3 is a prime.\n(a) BERT p(y = \u201cFermat\u201d | x) = 1 .1 \u00d7 10\u221214 (No retrieval.)\n(b) REALM p(y = \u201cFermat\u201d | x, z) = 1 .0 (Conditional probability with document z =\u201c257 is . . . a Fermat prime.\nThus a regular polygon with 257 sides is constructible with c ompass . . . \u201d)\n(c) REALM p(y = \u201cFermat\u201d | x) = 0 .129 (Marginal probability, marginalizing over top 8 retrieved documents.)\nEncoder or Retriever We \ufb01rst aim to determine whether\nREALM pre-training improves the retriever or the encoder,\nor both. To do so, we can reset the parameters of either\nthe retriever or the encoder to their baseline state before\nREALM pre-training, and feed that into \ufb01ne-tuning. Reset-\nting both the retriever and encoder reduces the system to\nour main baseline, ORQA. We \ufb01nd that both the encoder\nand retriever bene\ufb01t from REALM training separately, but\nthe best result requires both components acting in unison.\nMasking scheme We compare our salient span masking\nscheme (Section\n3.4) with (1) random token masking in-\ntroduced in BERT ( Devlin et al., 2018) and (2) random\nspan masking proposed by SpanBERT ( Joshi et al. , 2019).\nWhile such salient span masking has not been shown to\nbe impactful in previous work with standard BERT train-\ning (\nJoshi et al. , 2019), it is crucial for REALM. Intuitively,\nthe latent variable learning relies heavily on the utility of re-\ntrieval and is therefore more sensitive to a consistent lear n-\ning signal.\nMIPS index refresh rate During pre-training, we run a\nparallel process to re-embed corpus documents and rebuild\nthe MIPS index. This results in one index refresh per ap-\nproximately 500 training steps. To demonstrate the impor-\ntance of frequent index refreshes, we compare against using\na slower refresh rate. The results in Table\n2 suggests that\na stale index can hurt model training, and further reducing\nthis staleness could offer better optimization.\nExamples of retrieved documents Table\n3 shows an\nexample of the REALM masked language model predic-\ntion. In this example, \u201c Fermat\u201d is the correct word, and\nREALM (row (c)) gives the word a much high probability\ncompared to the BERT model (row (a)). Since REALM\nmanages to retrieve some documents with a related fact\n(row (b)), the marginalized probability of the correct an-\nswer dramatically increases. This shows that REALM is\nable to retrieve document to \ufb01ll in the masked word even\nthough it is trained with unsupervised text only.\n5. Discussion and Related Work\nWe previously discussed related methods for Open-QA.\nHere we present several alternate ways of viewing REALM\nthat connect it to a broader set of ideas beyond Open-QA:\nLanguage modeling with corpus as context Language\nrepresentation models have been incorporating contexts of\nincreasingly large scope when making predictions. Ex-\namples of this progression include models that condi-\ntion on surrounding words (\nMikolov et al., 2013a;b), sen-\ntences ( Kiros et al., 2015; Peters et al., 2018), and para-\ngraphs ( Radford et al., 2018; Devlin et al., 2018). We can\nview REALM as a generalization of the above work to the\nnext level of scope: the entire text corpus.\nRetrieve-and-edit with learned retrieval In order to\nbetter explain the variance in the input text and en-\nable controllable generation,\nGuu et al. (2018) proposed\na language model with the retrieve-and-edit frame-\nwork (Hashimoto et al., 2018) that conditions on text with\nhigh lexical overlap. REALM has a similar approach, ex-\ncept that the model learns for itself which texts are most\nuseful for reducing perplexity."
+        },
+        {
+          "citation_id": "E16",
+          "chunk_id": "2002.08909v1-2506-f86a7f4f9c2ce85c860e99f0",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.61259425,
+          "text": "critical components of REALM. In addition\nto the end-to-end results, we also report how often the gold\nanswer appears in the top-5 retrievals before applying any\n\ufb01ne-tuning. The latter metric more signi\ufb01cantly isolates the\ncontribution of improving the retriever during pre-traini ng."
+        },
+        {
+          "citation_id": "E17",
+          "chunk_id": "2002.08909v1-2507-b35b7c55c3d9e405e35420e5",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.61259425,
+          "text": "critical components of REALM. In addition\nto the end-to-end results, we also report how often the gold\nanswer appears in the top-5 retrievals before applying any\n\ufb01ne-tuning. The latter metric more signi\ufb01cantly isolates the\ncontribution of improving the retriever during pre-traini ng."
+        },
+        {
+          "citation_id": "E18",
+          "chunk_id": "2002.08909v1-2508-94c72724c6067eba38f54ce0",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.6088047,
+          "text": "ritical components of REALM. In addition\nto the end-to-end results, we also report how often the gold\nanswer appears in the top-5 retrievals before applying any\n\ufb01ne-tuning. The latter metric more signi\ufb01cantly isolates the\ncontribution of improving the retriever during pre-traini ng."
+        },
+        {
+          "citation_id": "E19",
+          "chunk_id": "2002.08909v1-804-c6534a644c2293e03b5a234f",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.5515821,
+          "text": "token, including the\nvector corresponding to [CLS] which is used as a \u201cpooled\u201d\nrepresentation of the sequence (denoted BERTCLS). Finally,\nwe perform a linear projection to reduce the dimensionality\nof the vector, denoted as a projection matrix W:\nEmbedinput(x) = WinputBERTCLS(joinBERT(x))\nEmbeddoc(z) = WdocBERTCLS(joinBERT(ztitle, zbody))\nwhere ztitle is the document\u2019s title and zbody is its body. We\nlet \u03b8 denote all parameters associated with the retriever,\nwhich include the Transformer and projection matrices.\nKnowledge-Augmented Encoder Given an input x and\na retrieved document z, the knowledge-augmented encoder\nde\ufb01nes p(y |z, x). We join x and z into a single sequence\nthat we feed into a Transformer (distinct from the one used\nin the retriever). This allows us to perform rich cross-\nattention between x and z before predicting y. See Figure\n1\nfor a concrete example.\nAt this stage, the architectures for pre-training and \ufb01ne-\ntuning differ slightly. For the masked language model pre-\ntraining task, we must predict the original value of each\n[MASK] token in x. To do so, we use the same masked"
+        },
+        {
+          "citation_id": "E20",
+          "chunk_id": "2002.08909v1-2792-867a72094251a8be4c2f2d18",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.54229337,
+          "text": "th learned retrieval In order to\nbetter explain the variance in the input text and en-\nable controllable generation,\nGuu et al. (2018) proposed\na language model with the retrieve-and-edit frame-\nwork (Hashimoto et al., 2018) that conditions on text with\nhigh lexical overlap. REALM has a similar approach, ex-\ncept that the model learns for itself which texts are most\nuseful for reducing perplexity. By jointly learning the re-\ntriever, REALM has the capacity to depend on information\nbeyond lexical overlap.\nScalable grounded neural memory The document in-\ndex can be viewed as a memory where the keys are\nthe document embeddings. From this view, our work\nshare motivations with works such as product key mem-\nory (\nLample et al., 2019), which enables sub-linear mem-\nory access in a memory network ( Weston et al., 2014;\nGraves et al., 2014; Sukhbaatar et al., 2015), allowing\nthese scalable memory layers to be integrated into large\nlanguage models. One main difference is that our memo-\nries are grounded\u2014each memory is associated with a docu-\nment rather than unnamed value vectors. This level of inter-\npretability is crucial for applications like Open-QA, wher e\nusers would require provenance for a predicted answer to\nbe trustworthy.\nUnsupervised Corpus Alignment In sequence-to-\nsequence models with attention (\nBahdanau et al., 2014),"
+        },
+        {
+          "citation_id": "E21",
+          "chunk_id": "2002.08909v1-833-d743b82ba583fb52585ed2ae",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.5288584,
+          "text": "sed\nin the retriever). This allows us to perform rich cross-\nattention between x and z before predicting y. See Figure\n1\nfor a concrete example.\nAt this stage, the architectures for pre-training and \ufb01ne-\ntuning differ slightly. For the masked language model pre-\ntraining task, we must predict the original value of each\n[MASK] token in x. To do so, we use the same masked"
+        },
+        {
+          "citation_id": "E22",
+          "chunk_id": "2002.08909v1-1184-f5bf35e0ca47e8605115d06b",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.34121418,
+          "text": "e use the same masked\n\n[Page 4]\nREALM: Retrieval-Augmented Language Model Pre-Training\nFigure 2. The overall framework of REALM. Left: Unsupervised pre-training. The knowledge retriever and knowledge-augmented\nencoder are jointly pre-trained on the unsupervised langua ge modeling task. Right: Supervised \ufb01ne-tuning. After the parameters of the\nretriever (\u03b8) and encoder ( \u03c6) have been pre-trained, they are then \ufb01ne-tuned on a task of p rimary interest, using supervised examples.\nlanguage modeling (MLM) loss as in Devlin et al. (2018):\np(y |z, x) =\nJx\u220f\nj=1\np(yj |z, x)\np(yj |z, x) \u221d exp\n(\nw\u22a4\nj BERTMASK(j)(joinBERT(x, zbody))\n)\nwhere BERTMASK(j) denotes the Transformer output vector\ncorresponding to the jth masked token, Jx is the total num-\nber of [MASK] tokens in x, and wj is a learned word em-\nbedding for token yj.\nFor Open-QA \ufb01ne-tuning, we wish to produce the answer\nstring y. Following previous reading comprehension work\n(\nRajpurkar et al., 2016; Seo et al. , 2016; Lee et al. , 2016;\nClark & Gardner , 2017), we will assume that the answer\ny can be found as a contiguous sequence of tokens in some\ndocument z. Let S(z, y) be the set of spans matching y in\nz. Then we can de\ufb01ne p(y |z, x) as:\np(y |z, x) \u221d\n\u2211\ns\u2208 S(z,y)\nexp\n(\nMLP\n([\nhSTART(s); hEND(s)\n]))\nhSTART(s) = BERTSTART(s)(joinBERT(x, zbody)),\nhEND(s) = BERTEND(s)(joinBERT(x, zbody)),\nwhere BERTSTART(s) and BERTEND(s) denote the Transformer\noutput vectors corresponding to the start and end tokens of\nspan s, respectively, while MLP denotes a feed-forward neu-\nral network. We will let \u03c6 denote all parameters associated\nwith the knowledge-augmented encoder.\n3.3. Training\nFor both pre-training and \ufb01ne-tuning, we train by maxi-\nmizing the log-likelihood log p(y |x) of the correct out-\nput y. Since both the knowledge retriever and knowledge-\naugmented encoder are differentiable neural networks, we\ncan compute the gradient of log p(y |x) (de\ufb01ned in Equa-\ntion\n1) with respect to the model parameters \u03b8 and \u03c6, and\noptimize using stochastic gradient descent.\nThe key computational challenge is that the marginal prob-\nability p(y |x) = \u2211\nz\u2208Z p(y |x, z) p(z |x) involves a sum-\nmation over all documents z in the knowledge corpus Z.\nWe approximate this by instead summing over the top k\ndocuments with highest probability under p(z |x)\u2014this is\nreasonable if most documents have near zero probability.\nEven with this approximation, we still need an ef\ufb01cient way\nto \ufb01nd the top k documents. Note that the ordering of doc-\numents under p(z |x) is the same as under the relevance\nscore f (x, z) = Embedinput(x)\u22a4 Embeddoc(z), which is an\ninner product. Thus, we can employ Maximum Inner Prod-\nuct Search (MIPS) algorithms to \ufb01nd the approximate top k\ndocuments, using running time and storage space that scale\nsub-linearly with the number of documents (\nRam & Gray ,\n2012; Shrivastava & Li, 2014; Shen et al., 2015).\nTo employ MIPS, we must pre-compute Embeddoc(z) for\nevery z \u2208 Z and construct an ef\ufb01cient search index over\nthese embeddings. However, this data structure will no\nlonger be consistent with p(z |x) if the parameters \u03b8 of\nEmbeddoc are later updated. Hence, the search index goes\n\u201cstale\u201d after every gradient update on \u03b8.\nOur solution is to \u201crefresh\u201d the index by asynchronously\nre-embedding and re-indexing all documents every several\nhundred training steps. The MIPS index is slightly stale be-\ntween refreshes, but note that it is only used to select the\ntop k documents. We recompute p(z |x) and its gradient,\nusing the fresh \u03b8, for these top k documents after retriev-\ning them. In Section\n4.5, we empirically demonstrate that\nthis procedure results in stable optimization, provided th at\nrefreshes happen at a suf\ufb01ciently frequent rate.\nImplementing asynchronous MIPS refreshes We asyn-\nchronously refresh the MIPS index by running two jobs in\nparallel: a primary trainer job, which performs gradient\nupdates on the parameters, and a secondary index builder\njob, which embeds and indexes the documents. As shown"
+        },
+        {
+          "citation_id": "E23",
+          "chunk_id": "2002.08909v1-1454-610b248097b49c0e8aebbf43",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.32872936,
+          "text": "ch performs gradient\nupdates on the parameters, and a secondary index builder\njob, which embeds and indexes the documents. As shown"
+        }
+      ],
+      "baseline_answer": "REALM employs a retrieve-then-predict framework in which the overall goal is to model the probability of an output y given an input x, denoted as p(y|x). This is decomposed into two steps through a latent variable z, representing documents retrieved from a knowledge corpus Z:\n\n1. **Retrieval Step**: Given the input x, the model samples documents z from a retrieval distribution p(z|x). This distribution is defined by a neural knowledge retriever that scores documents by a relevance function f(x,z), which is based on dense vector embeddings of the input and documents. Specifically, each input x and document z are embedded into vectors using BERT-based Transformers followed by a linear projection, and the relevance score is the inner product of these vectors. The retrieval distribution p(z|x) is then a softmax over all these relevance scores.\n\n2. **Prediction Step**: Conditioning on both the input x and a retrieved document z, the model predicts the output y according to p(y|z,x).\n\nThe latent variable z is crucial because the final likelihood of generating y from x requires marginalizing over all possible retrieved documents z:\n\n\\[\np(y|x) = \\sum_{z \\in Z} p(y|z,x) p(z|x)\n\\]\n\nThis formulation treats retrieval as a probabilistic latent variable selection step, enabling the model to integrate knowledge retrieval explicitly during pre-training and fine-tuning (masked language modeling and open-domain QA tasks respectively) [1].\n\nRegarding backpropagation through the retriever, the training objective maximizes the likelihood p(y|x) by updating the retriever's parameters \u03b8 through gradients that consider contributions from all possible documents z. The gradient of the log likelihood with respect to the retriever's parameters is:\n\n\\[\n\\nabla \\log p(y|x) = \\sum_{z \\in Z} r(z) \\nabla f(x,z)\n\\]\n\nwhere\n\n\\[\nr(z) = \\left( \\frac{p(y|z,x)}{p(y|x)} - 1 \\right) p(z|x)\n\\]\n\nThis means that each document's score f(x,z) is adjusted positively if the document helps better predict y (i.e., if \\(p(y|z, x)\\) is greater than the expected \\(p(y|x)\\)) and negatively otherwise. This mechanism effectively backpropagates the prediction loss through the retrieval step, enabling the retriever to learn to identify documents that improve the prediction accuracy of y",
+      "orchestrator_answer": "The retrieve-then-predict framework in REALM operates by explicitly integrating a learned textual knowledge retriever into the language model pre-training process [E1][E2][E3][E4][E5][E7]. Unlike traditional models that store knowledge solely within their parameters, REALM exposes the role of world knowledge by requiring the model to retrieve relevant documents from a large text corpus before making predictions [E1][E9].\n\nIn this framework, the retrieval process is modeled as a latent variable \\( z \\), which represents the document retrieved from the corpus given an input query \\( x \\) [E9]. The overall generative likelihood for predicting an answer \\( y \\) is decomposed by marginalizing over this latent retrieval variable \\( z \\), formally expressed as:\n\\[\np(y|x) = \\sum_z p(y|z, x) \\, p(z|x)\n\\]\nwhere \\( p(z|x) \\) denotes the retrieval distribution and \\( p(y|z, x) \\) is the prediction distribution conditioned on the retrieved document and the input query [E9].\n\nThe retrieval distribution \\( p(z|x) \\) is modeled by a neural knowledge retriever that computes relevance scores based on dense vector embeddings of both the input query and documents in the corpus. This is commonly implemented using BERT-style Transformer encoders followed by learned linear projection layers, and relevance is scored via an inner product between embedded query and document vectors [E9].\n\nRegarding training, REALM treats the retrieval variable \\( z \\) as latent and learns to optimize the likelihood of correct predictions by marginalizing over possible retrieved documents. Through this latent variable modeling, the retriever parameters receive gradient signals derived from their impact on the final prediction \\( p(y|x) \\). This enables backpropagation through the retriever network, effectively integrating retrieval learning into end-to-end pre-training [E6][E10].\n\nSpecifically, the gradient of the REALM pre-training objective with respect to the retriever parameters is derived using conditional Bayes\u2019 rule, and under ideal conditions (such as a perfect retrieval document existing), gradient descent on the REALM objective is equivalent to supervised maximum likelihood training [E6]. This approach allows REALM to learn which texts to retrieve that most improve masked token prediction and downstream tasks, thereby adapting both the retriever and the knowledge-augmented encoder jointly [E10].\n\nIn summary, REALM\u2019s retrieve-then-predict framework models retrieval as a latent variable \\( z \\), marginalizes over"
     },
     {
       "experiment_slug": "experiment1_balanced",
@@ -70,26 +448,135 @@
       "question_index": 3,
       "question": "What evidence does the paper provide that REALM improves Open-domain Question Answering performance compared to methods like ORQA, and what are the key reasons for this improvement?",
       "top_k": 5,
-      "baseline_latency_seconds": 2.7411557500000043,
-      "orchestrator_latency_seconds": 30.49126087500001,
+      "baseline_latency_seconds": 4.486629374999978,
+      "orchestrator_latency_seconds": 51.094420125,
       "baseline_token_usage": {
         "input_tokens": 878,
-        "output_tokens": 170,
-        "total_tokens": 1048
+        "output_tokens": 236,
+        "total_tokens": 1114
       },
       "orchestrator_token_usage": {
-        "input_tokens": 7089,
-        "output_tokens": 1946,
-        "total_tokens": 9035
+        "input_tokens": 12246,
+        "output_tokens": 3118,
+        "total_tokens": 15364
       },
       "baseline_citation_count": 5,
-      "orchestrator_evidence_count": 5,
+      "orchestrator_evidence_count": 10,
       "fact_check_status_counts": {
-        "weakly_supported": 7,
-        "supported": 1
+        "supported": 5,
+        "unsupported": 2
       },
-      "baseline_answer": "The paper provides evidence that REALM improves Open-domain Question Answering (QA) performance by presenting results on the NaturalQuestions-Open dataset, which include ablation studies on critical components of REALM. A key metric reported is the frequency with which the gold answer appears in the top-5 retrieved documents before any fine-tuning is applied. This metric highlights the improvement in the retriever due to pre-training, isolating its contribution to the end-to-end QA performance. This suggests that REALM's stronger retriever, enhanced during pre-training, is a central reason for its improved QA performance compared to prior methods like ORQA [1][2][3][4][5].\n\nCitations:  \n[1]-[5] data/2002.08909v1.pdf, chunks 2444.0 to 2448.0",
-      "orchestrator_answer": "The paper provides evidence that REALM improves Open-domain Question Answering (QA) performance primarily through enhancements to its retriever component via a dedicated pre-training phase. Specifically, the study presents results on the NaturalQuestions-Open dataset where critical components of the REALM model are ablated to assess their impact [E1\u2013E5]. \n\nBeyond reporting standard end-to-end QA performance, the paper uniquely introduces and emphasizes a metric measuring how often the gold answer appears in the top-5 retrieved passages before any fine-tuning is applied. This pre-fine-tuning metric more directly isolates the effectiveness of the retriever itself, separate from the reader module or joint training effects [E1\u2013E5]. By focusing on this retrieval-level performance, the authors highlight that the pre-training process substantially enhances the retriever\u2019s ability to surface relevant documents containing the answer [E1\u2013E5].\n\nHowever, while this isolation of retriever improvements is well supported, the evidence does not explicitly provide quantitative comparisons between REALM and methods like ORQA or other prior approaches. Nor does it directly show that REALM\u2019s retriever alone outperforms these baselines before fine-tuning. Thus, claims about superiority relative to ORQA or other methods are only weakly supported by the available evidence and would require additional comparative data.\n\nIn summary, the key reasons for REALM\u2019s improved Open-domain QA performance, as evidenced by the paper, are:\n\n- A focused pre-training phase that enhances the retriever\u2019s capability to find relevant documents;\n\n- Reporting and utilizing a pre-fine-tuning \"gold answer in top-5 retrievals\" metric that isolates retriever contribution;\n\n- Ablation studies confirming the significant role of the retriever component in the overall system\u2019s performance.\n\nThe comparative advantage over methods like ORQA is suggested but not explicitly demonstrated in the provided evidence [E1\u2013E5]."
+      "baseline_evidence": [
+        {
+          "citation_id": "1",
+          "chunk_id": "2002.08909v1-2444-af66052c100f86e99778527e",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.686699,
+          "text": "2 we present results for NaturalQuestions-Open\nafter ablating critical components of REALM. In addition\nto the end-to-end results, we also report how often the gold\nanswer appears in the top-5 retrievals before applying any\n\ufb01ne-tuning. The latter metric more signi\ufb01cantly isolates the\ncontribution of improving the retriever during pre-traini ng."
+        },
+        {
+          "citation_id": "2",
+          "chunk_id": "2002.08909v1-2445-2d2fda09148bafc8f9d92bd8",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.686699,
+          "text": "2 we present results for NaturalQuestions-Open\nafter ablating critical components of REALM. In addition\nto the end-to-end results, we also report how often the gold\nanswer appears in the top-5 retrievals before applying any\n\ufb01ne-tuning. The latter metric more signi\ufb01cantly isolates the\ncontribution of improving the retriever during pre-traini ng."
+        },
+        {
+          "citation_id": "3",
+          "chunk_id": "2002.08909v1-2446-41ffd4fc5e72f3639367551d",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.6861319,
+          "text": "we present results for NaturalQuestions-Open\nafter ablating critical components of REALM. In addition\nto the end-to-end results, we also report how often the gold\nanswer appears in the top-5 retrievals before applying any\n\ufb01ne-tuning. The latter metric more signi\ufb01cantly isolates the\ncontribution of improving the retriever during pre-traini ng."
+        },
+        {
+          "citation_id": "4",
+          "chunk_id": "2002.08909v1-2447-cc02def94b4cf846a2498e54",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.6861319,
+          "text": "we present results for NaturalQuestions-Open\nafter ablating critical components of REALM. In addition\nto the end-to-end results, we also report how often the gold\nanswer appears in the top-5 retrievals before applying any\n\ufb01ne-tuning. The latter metric more signi\ufb01cantly isolates the\ncontribution of improving the retriever during pre-traini ng."
+        },
+        {
+          "citation_id": "5",
+          "chunk_id": "2002.08909v1-2448-4bc024d9bbabd315c38c69dc",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.6855526,
+          "text": "e present results for NaturalQuestions-Open\nafter ablating critical components of REALM. In addition\nto the end-to-end results, we also report how often the gold\nanswer appears in the top-5 retrievals before applying any\n\ufb01ne-tuning. The latter metric more signi\ufb01cantly isolates the\ncontribution of improving the retriever during pre-traini ng."
+        }
+      ],
+      "orchestrator_evidence": [
+        {
+          "citation_id": "E1",
+          "chunk_id": "2002.08909v1-2446-41ffd4fc5e72f3639367551d",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.70688826,
+          "text": "we present results for NaturalQuestions-Open\nafter ablating critical components of REALM. In addition\nto the end-to-end results, we also report how often the gold\nanswer appears in the top-5 retrievals before applying any\n\ufb01ne-tuning. The latter metric more signi\ufb01cantly isolates the\ncontribution of improving the retriever during pre-traini ng."
+        },
+        {
+          "citation_id": "E2",
+          "chunk_id": "2002.08909v1-2447-cc02def94b4cf846a2498e54",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.70688826,
+          "text": "we present results for NaturalQuestions-Open\nafter ablating critical components of REALM. In addition\nto the end-to-end results, we also report how often the gold\nanswer appears in the top-5 retrievals before applying any\n\ufb01ne-tuning. The latter metric more signi\ufb01cantly isolates the\ncontribution of improving the retriever during pre-traini ng."
+        },
+        {
+          "citation_id": "E3",
+          "chunk_id": "2002.08909v1-2448-4bc024d9bbabd315c38c69dc",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.706473,
+          "text": "e present results for NaturalQuestions-Open\nafter ablating critical components of REALM. In addition\nto the end-to-end results, we also report how often the gold\nanswer appears in the top-5 retrievals before applying any\n\ufb01ne-tuning. The latter metric more signi\ufb01cantly isolates the\ncontribution of improving the retriever during pre-traini ng."
+        },
+        {
+          "citation_id": "E4",
+          "chunk_id": "2002.08909v1-2444-af66052c100f86e99778527e",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.7051343,
+          "text": "2 we present results for NaturalQuestions-Open\nafter ablating critical components of REALM. In addition\nto the end-to-end results, we also report how often the gold\nanswer appears in the top-5 retrievals before applying any\n\ufb01ne-tuning. The latter metric more signi\ufb01cantly isolates the\ncontribution of improving the retriever during pre-traini ng."
+        },
+        {
+          "citation_id": "E5",
+          "chunk_id": "2002.08909v1-2445-2d2fda09148bafc8f9d92bd8",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.7051343,
+          "text": "2 we present results for NaturalQuestions-Open\nafter ablating critical components of REALM. In addition\nto the end-to-end results, we also report how often the gold\nanswer appears in the top-5 retrievals before applying any\n\ufb01ne-tuning. The latter metric more signi\ufb01cantly isolates the\ncontribution of improving the retriever during pre-traini ng."
+        },
+        {
+          "citation_id": "E6",
+          "chunk_id": "2002.08909v1-2519-85845dc0e72f4b186049157c",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.63400406,
+          "text": "ponents of REALM. In addition\nto the end-to-end results, we also report how often the gold\nanswer appears in the top-5 retrievals before applying any\n\ufb01ne-tuning. The latter metric more signi\ufb01cantly isolates the\ncontribution of improving the retriever during pre-traini ng."
+        },
+        {
+          "citation_id": "E7",
+          "chunk_id": "2002.08909v1-2473-a9fbc9949a2037d3d3405584",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.62498575,
+          "text": "uralQuestions-Open\nafter ablating critical components of REALM. In addition\nto the end-to-end results, we also report how often the gold\nanswer appears in the top-5 retrievals before applying any\n\ufb01ne-tuning. The latter metric more signi\ufb01cantly isolates the\ncontribution of improving the retriever during pre-traini ng."
+        },
+        {
+          "citation_id": "E8",
+          "chunk_id": "2002.08909v1-2474-885c4db18c028eb40880d972",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.6238563,
+          "text": "ralQuestions-Open\nafter ablating critical components of REALM. In addition\nto the end-to-end results, we also report how often the gold\nanswer appears in the top-5 retrievals before applying any\n\ufb01ne-tuning. The latter metric more signi\ufb01cantly isolates the\ncontribution of improving the retriever during pre-traini ng."
+        },
+        {
+          "citation_id": "E9",
+          "chunk_id": "2002.08909v1-2515-ae82d984a290fbec4045dab2",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.5830959,
+          "text": "components of REALM. In addition\nto the end-to-end results, we also report how often the gold\nanswer appears in the top-5 retrievals before applying any\n\ufb01ne-tuning. The latter metric more signi\ufb01cantly isolates the\ncontribution of improving the retriever during pre-traini ng."
+        },
+        {
+          "citation_id": "E10",
+          "chunk_id": "2002.08909v1-2516-3bc1aec1953debf7d09c5193",
+          "source": "data/2002.08909v1.pdf",
+          "score": 0.5830959,
+          "text": "components of REALM. In addition\nto the end-to-end results, we also report how often the gold\nanswer appears in the top-5 retrievals before applying any\n\ufb01ne-tuning. The latter metric more signi\ufb01cantly isolates the\ncontribution of improving the retriever during pre-traini ng."
+        }
+      ],
+      "baseline_answer": "The paper provides evidence that REALM improves Open-domain Question Answering (QA) performance by presenting results on the NaturalQuestions-Open dataset after ablating critical components of REALM. These results include both end-to-end performance and a metric indicating how often the gold answer appears in the top-5 retrievals before any fine-tuning. This latter metric serves to isolate the contribution of improving the retriever during pre-training, suggesting that enhancements in retrieval quality before fine-tuning play a significant role in the overall performance gain of REALM compared to previous methods like ORQA [1][2][3][4][5].\n\nThe key reasons for this improvement stem from REALM's retrieval mechanism that is integrated and improved via end-to-end training, particularly focusing on the retriever's pre-training to better locate relevant documents. By effectively increasing the chances that the correct answer is found among the top retrieved documents even before fine-tuning, REALM's approach facilitates better downstream question answering accuracy.\n\nCitations:  \n[1][2][3][4][5] data/2002.08909v1.pdf (chunks 2444.0 to 2448.0)",
+      "orchestrator_answer": "The paper provides evidence that REALM improves Open-domain Question Answering (QA) performance by presenting results on the NaturalQuestions-Open dataset after ablating key components of the REALM model [E1][E2][E3][E4][E5]. A critical metric used in these experiments is how often the gold answer appears in the top-5 retrievals before applying any fine-tuning [E1][E2][E3][E4][E5]. This metric is specifically designed to isolate the contribution of retriever improvements made during pre-training from the overall end-to-end model performance, thereby highlighting the effect of enhancing the retrieval component [E1][E2][E3][E4][E5]. The findings indicate that improvements to the retriever during pre-training play a significant role in the model\u2019s capacity to retrieve relevant passages containing the gold answer prior to fine-tuning [E1][E2][E3][E4][E5].\n\nHowever, the evidence does not explicitly demonstrate that REALM\u2019s retriever is more effective compared to methods like ORQA, nor does it provide detailed explanations beyond isolating the retriever\u2019s contribution as the key reason for performance gains [E1][E2][E3][E4][E5]. Furthermore, precise quantitative comparisons between REALM and ORQA or similarly related approaches are not included in the available evidence [E1][E2][E3][E4][E5]. Therefore, while the paper shows that improvements in the retriever during pre-training significantly benefit REALM\u2019s Open-domain QA performance, the provided evidence is insufficient to fully explain or quantify how and why REALM outperforms ORQA specifically."
     }
   ]
 }

@@ -305,57 +305,32 @@ To run only a subset of experiments:
 EXPERIMENT_SLUGS=experiment01_architecture_control_top5,experiment07_strong_checker_synth_top5 ./run.sh
 ```
 
-## Findings
+## Key Findings (24 Experiments, 720 GPT-4.1 Judge Evaluations)
 
-This section should be completed after running the full experiment suite and reading `res/summary/summary.md`.
+The single-agent baseline **outperforms** the five-agent multi-agent pipeline on every quality dimension while consuming 5.7x fewer tokens and running 6-10x faster.
 
-### Overall Results
+| Dimension | Baseline | Multi-Agent | Delta |
+|-----------|----------|-------------|-------|
+| Factual Accuracy | **6.99** | 6.69 | -0.30 |
+| Completeness | **7.31** | 6.90 | -0.41 |
+| Citation Quality | **7.05** | 6.74 | -0.31 |
+| Clarity | **8.75** | 8.52 | -0.23 |
 
-| Experiment Family | Main Observation | Evidence From Metrics |
-|---|---|---|
-| Architecture control | TODO | TODO |
-| Model allocation ablations | TODO | TODO |
-| Retrieval depth sweep | TODO | TODO |
+Multi-agent win rate: **33.6%** (121 wins vs 198 losses across 360 matchups).
 
-### Baseline vs Multi-Agent
+**Why:** Information loss during summarization, over-hedging from conservative fact-checking, and the fact that same-model-different-prompt does not create real specialization. **Retrieval depth (top_k) matters more than architecture** — baseline at top_k=8 beats multi-agent at any top_k.
 
-TODO: Summarize whether the multi-agent system improves factual accuracy, completeness, citation quality, or clarity compared with the baseline when model and `top_k` are controlled.
-
-### Which Specialized Agent Benefits Most From A Stronger Model?
-
-TODO: Compare the model-allocation ablations. Note whether the stronger orchestrator, search agent, summarizer, fact checker, final synthesizer, checker+synthesizer pair, or all-strong setup performs best.
-
-### Effect Of Retrieval Depth
-
-TODO: Compare `top_k=3`, `top_k=5`, and `top_k=8`. Note whether more evidence improves synthesis questions or increases unsupported claims due to noisy context.
-
-### Citation Quality
-
-TODO: Report whether the multi-agent system produces more precise sentence-level citations than the baseline. Use judge citation-quality scores and manual examples from `answers.md`.
-
-### Unsupported Claims
-
-TODO: Report whether stricter fact-checking reduces unsupported claims. Include both internal fact-check status counts and external judge unsupported-claim counts.
-
-### Cost and Latency
-
-TODO: Compare token usage and latency. Multi-agent systems are expected to cost more and take longer because they make multiple LLM calls. The key question is whether quality improvements justify the added cost.
-
-## Threats To Validity
-
-- The current dataset is small and centered on a limited set of research-paper PDFs.
-- The external judge is itself an LLM, so judge scores should be treated as approximate rather than absolute ground truth.
-- Parallel execution can make latency measurements noisier because multiple API calls may compete for network and provider resources.
-- Retrieval quality depends on chunking, embedding model choice, and the indexed text extracted from PDFs.
-- PDF text extraction may miss information from figures, tables, equations, or images.
-- The multi-agent system may be more sensitive to prompt design than the baseline.
+For the full analysis with per-question breakdowns, cost-quality tradeoffs, root cause analysis, and recommendations, see [docs/ANALYSIS.md](docs/ANALYSIS.md).
 
 ## Conclusion
 
-This project evaluates whether agent specialization improves retrieval-augmented research QA. The system compares a single-agent RAG baseline against a multi-agent pipeline with dedicated search, summarization, fact-checking, and synthesis roles. The controlled experiment design separates architecture effects, model-allocation effects, and retrieval-depth effects.
+For single-document research paper QA with a mid-tier open-source model, multi-agent RAG architectures do not improve answer quality over a well-configured single-agent baseline. The five-agent pipeline's theoretical benefits are negated by information loss during summarization, error propagation across agent handoffs, and a 5.7x token overhead. The most actionable finding: **before adding agents, add chunks** — increasing retrieval depth provides more quality improvement per marginal token than architectural complexity.
 
-The expected tradeoff is that the multi-agent system will use more tokens and have higher latency, but may improve citation quality, factual accuracy, and handling of complex synthesis questions. The final conclusion should be filled in after reviewing the generated results in `res/summary/`.
+## Documentation
 
-Final conclusion after experiments:
-
-TODO: State whether the multi-agent system meaningfully improves research quality and accuracy, under which configurations it helps most, and whether the added cost is justified.
+| Document | What it covers |
+|----------|---------------|
+| [docs/ANALYSIS.md](docs/ANALYSIS.md) | Full experimental findings, data tables, root cause analysis of why multi-agent lost, when it would help, and recommendations |
+| [docs/EXPERIMENT_DESIGN.md](docs/EXPERIMENT_DESIGN.md) | Research question, 24 experiment configs, evaluation methodology, question set, HPC migration story, bugs found |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System design, both agent pipelines, data pipeline, concurrency model, config reference, output formats |
+| [docs/HPC_DEPLOY.md](docs/HPC_DEPLOY.md) | Step-by-step deployment runbook for NEU Explorer HPC cluster |

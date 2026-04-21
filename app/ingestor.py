@@ -260,11 +260,10 @@ class ResearchPaperIngestor:
             return file_path.as_posix()
 
     def _chunk_cache_key(self, text: str) -> str:
-        settings = self.embedder.llm_client.settings
         raw_key = "\n".join(
             [
-                settings.openai_embedding_model,
-                str(settings.openai_embedding_dimensions),
+                self.embedder.model_name,
+                str(self.embedder.embedding_dimensions),
                 hashlib.sha256(text.encode("utf-8")).hexdigest(),
             ]
         )
@@ -299,10 +298,9 @@ class ResearchPaperIngestor:
         self.chunk_cache_dir.mkdir(parents=True, exist_ok=True)
         cache_path = self._chunk_cache_path(cache_key)
         tmp_path = cache_path.with_suffix(".json.tmp")
-        settings = self.embedder.llm_client.settings
         payload = {
-            "embedding_model": settings.openai_embedding_model,
-            "embedding_dimensions": settings.openai_embedding_dimensions,
+            "embedding_model": self.embedder.model_name,
+            "embedding_dimensions": self.embedder.embedding_dimensions,
             "embedding": embedding,
         }
         tmp_path.write_text(json.dumps(payload), encoding="utf-8")
@@ -312,12 +310,13 @@ class ResearchPaperIngestor:
     def _chunk_text(self, text: str) -> list[TextChunk]:
         chunks: list[TextChunk] = []
         start = 0
+        min_chunk_chars = self.chunk_overlap_chars + 1
 
         while start < len(text):
             end = min(start + self.chunk_size_chars, len(text))
             if end < len(text):
                 boundary = _best_chunk_boundary(text, start, end)
-                if boundary > start:
+                if boundary > start and (boundary - start) >= min_chunk_chars:
                     end = boundary
 
             chunk_text = text[start:end].strip()
@@ -333,7 +332,8 @@ class ResearchPaperIngestor:
 
             if end >= len(text):
                 break
-            start = max(end - self.chunk_overlap_chars, start + 1)
+            step = max(end - start - self.chunk_overlap_chars, min_chunk_chars)
+            start = start + step
 
         return chunks
 

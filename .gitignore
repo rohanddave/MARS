@@ -3,5 +3,23 @@ __pycache__/
 data/.ingestion_manifest.json
 data/.embedding_cache/
 
-# Docker volumes and local env
+# Environment and secrets — never commit real keys
 .env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Claude Code local config
+CLAUDE.md
+.claude/
+
+# OS files
+.DS_Store
+
+# Python
+.venv/
+venv/
+*.egg-info/
+dist/
+build/

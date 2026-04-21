@@ -401,7 +401,7 @@ def _chunks_to_evidence(query: str, chunks: list[RetrievedChunk]) -> list[Eviden
         source = chunk.metadata.get("source") or chunk.metadata.get("filename") or "unknown source"
         evidence.append(
             Evidence(
-                citation_id=f"E{len(evidence) + index}",
+                citation_id=f"E{index}",
                 query=query,
                 chunk_id=chunk.id,
                 source=str(source),

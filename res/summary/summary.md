@@ -4,30 +4,30 @@ This summary is generated from the persisted `metrics.json` files in each experi
 
 | Experiment | Family | Control Variable | top_k | Avg Baseline Latency | Avg Multi-Agent Latency | Avg Baseline Tokens | Avg Multi-Agent Tokens | Avg Baseline Citations | Avg Multi-Agent Evidence | Unsupported Claims/Q |
 |---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|
-| experiment01: architecture control, all small models, top_k=5 | architecture_control | agent_architecture | 5 | 4.256s | 40.132s | 2143.2 | 12736.1 | 5.0 | 16.3 | 0.80 |
-| experiment02: model ablation, strong orchestrator only, top_k=5 | model_ablation | orchestrator_model | 5 | 4.897s | 47.352s | 2140.2 | 15493.5 | 5.0 | 17.3 | 1.60 |
-| experiment03: model ablation, strong search agent only, top_k=5 | model_ablation | search_model | 5 | 3.925s | 43.317s | 2140.3 | 12799.7 | 5.0 | 20.1 | 1.27 |
-| experiment04: model ablation, strong summarizer only, top_k=5 | model_ablation | summarization_model | 5 | 3.484s | 45.523s | 2110.9 | 15329.0 | 5.0 | 18.9 | 1.40 |
-| experiment05: model ablation, strong fact checker only, top_k=5 | model_ablation | fact_check_model | 5 | 4.305s | 40.493s | 2137.8 | 13906.2 | 5.0 | 16.5 | 0.73 |
-| experiment06: model ablation, strong final synthesizer only, top_k=5 | model_ablation | final_synthesis_model | 5 | 3.623s | 32.404s | 2114.1 | 11080.1 | 5.0 | 14.1 | 0.27 |
-| experiment07: model interaction, strong checker and synthesizer, top_k=5 | model_interaction | fact_check_and_final_synthesis_models | 5 | 2.043s | 17.977s | 205.0 | 2990.0 | 0.0 | 0.0 | 2.00 |
-| experiment08: upper bound, all strong models, top_k=5 | model_upper_bound | all_agent_models | 5 | 2.412s | 16.368s | 198.4 | 2942.1 | 0.0 | 0.0 | 1.87 |
-| experiment09: retrieval sweep, all small models, top_k=3 | top_k_sweep | top_k | 3 | 1.928s | 15.013s | 205.9 | 2752.3 | 0.0 | 0.0 | 2.20 |
-| experiment10: retrieval sweep, all small models, top_k=8 | top_k_sweep | top_k | 8 | 1.881s | 14.166s | 203.6 | 2752.3 | 0.0 | 0.0 | 2.13 |
-| experiment11: retrieval sweep, strong checker and synthesizer, top_k=3 | top_k_sweep | top_k | 3 | 1.836s | 16.102s | 205.6 | 2979.2 | 0.0 | 0.0 | 1.87 |
-| experiment12: retrieval sweep, strong checker and synthesizer, top_k=8 | top_k_sweep | top_k | 8 | 2.442s | 15.444s | 208.1 | 2924.6 | 0.0 | 0.0 | 1.80 |
-| experiment13: retrieval sweep, all strong models, top_k=3 | top_k_sweep | top_k | 3 | 1.840s | 15.399s | 199.1 | 2944.1 | 0.0 | 0.0 | 2.00 |
-| experiment14: retrieval sweep, all strong models, top_k=8 | top_k_sweep | top_k | 8 | 1.868s | 16.893s | 200.5 | 3004.7 | 0.0 | 0.0 | 1.87 |
-| experiment15: retrieval sweep, strong orchestrator only, top_k=3 | top_k_sweep | top_k | 3 | 2.261s | 15.031s | 206.1 | 2908.9 | 0.0 | 0.0 | 2.40 |
-| experiment16: retrieval sweep, strong orchestrator only, top_k=8 | top_k_sweep | top_k | 8 | 1.696s | 14.867s | 204.1 | 2789.1 | 0.0 | 0.0 | 2.27 |
-| experiment17: retrieval sweep, strong search agent only, top_k=3 | top_k_sweep | top_k | 3 | 1.720s | 16.021s | 204.9 | 2835.5 | 0.0 | 0.0 | 2.33 |
-| experiment18: retrieval sweep, strong search agent only, top_k=8 | top_k_sweep | top_k | 8 | 2.207s | 16.354s | 206.5 | 2770.5 | 0.0 | 0.0 | 2.13 |
-| experiment19: retrieval sweep, strong summarizer only, top_k=3 | top_k_sweep | top_k | 3 | 1.845s | 15.281s | 202.9 | 2742.3 | 0.0 | 0.0 | 2.00 |
-| experiment20: retrieval sweep, strong summarizer only, top_k=8 | top_k_sweep | top_k | 8 | 2.059s | 15.486s | 203.3 | 2756.7 | 0.0 | 0.0 | 2.33 |
-| experiment21: retrieval sweep, strong fact checker only, top_k=3 | top_k_sweep | top_k | 3 | 1.741s | 16.516s | 207.3 | 3025.3 | 0.0 | 0.0 | 2.13 |
-| experiment22: retrieval sweep, strong fact checker only, top_k=8 | top_k_sweep | top_k | 8 | 1.935s | 14.975s | 203.1 | 3011.1 | 0.0 | 0.0 | 2.00 |
-| experiment23: retrieval sweep, strong final synthesizer only, top_k=3 | top_k_sweep | top_k | 3 | 2.069s | 13.917s | 205.2 | 2713.5 | 0.0 | 0.0 | 2.07 |
-| experiment24: retrieval sweep, strong final synthesizer only, top_k=8 | top_k_sweep | top_k | 8 | 1.953s | 15.365s | 206.3 | 2703.5 | 0.0 | 0.0 | 2.07 |
+| experiment01: architecture control, all small models, top_k=5 | architecture_control | agent_architecture | 5 | 6.411s | 47.791s | 5272.0 | 30125.2 | 5.0 | 8.4 | 1.33 |
+| experiment02: model ablation, strong orchestrator only, top_k=5 | model_ablation | orchestrator_model | 5 | 5.954s | 45.986s | 5237.5 | 28979.2 | 5.0 | 8.9 | 0.60 |
+| experiment03: model ablation, strong search agent only, top_k=5 | model_ablation | search_model | 5 | 6.155s | 49.103s | 5262.0 | 31368.1 | 5.0 | 8.5 | 1.00 |
+| experiment04: model ablation, strong summarizer only, top_k=5 | model_ablation | summarization_model | 5 | 6.221s | 42.805s | 5262.9 | 26844.7 | 5.0 | 9.1 | 0.53 |
+| experiment05: model ablation, strong fact checker only, top_k=5 | model_ablation | fact_check_model | 5 | 5.903s | 42.002s | 5250.2 | 27957.7 | 5.0 | 8.3 | 1.00 |
+| experiment06: model ablation, strong final synthesizer only, top_k=5 | model_ablation | final_synthesis_model | 5 | 5.748s | 47.961s | 5257.9 | 31513.9 | 5.0 | 8.5 | 1.20 |
+| experiment07: model interaction, strong checker and synthesizer, top_k=5 | model_interaction | fact_check_and_final_synthesis_models | 5 | 5.801s | 43.517s | 5267.8 | 29075.0 | 5.0 | 8.4 | 1.13 |
+| experiment08: upper bound, all strong models, top_k=5 | model_upper_bound | all_agent_models | 5 | 5.542s | 42.675s | 5239.1 | 28729.9 | 5.0 | 8.3 | 0.93 |
+| experiment09: retrieval sweep, all small models, top_k=3 | top_k_sweep | top_k | 3 | 4.673s | 27.606s | 3079.5 | 17600.3 | 3.0 | 5.4 | 0.73 |
+| experiment10: retrieval sweep, all small models, top_k=8 | top_k_sweep | top_k | 8 | 6.685s | 66.811s | 8214.9 | 47522.2 | 8.0 | 12.6 | 1.33 |
+| experiment11: retrieval sweep, strong checker and synthesizer, top_k=3 | top_k_sweep | top_k | 3 | 5.168s | 30.814s | 3074.2 | 18039.6 | 3.0 | 5.8 | 0.80 |
+| experiment12: retrieval sweep, strong checker and synthesizer, top_k=8 | top_k_sweep | top_k | 8 | 6.623s | 69.539s | 8197.0 | 48333.5 | 8.0 | 12.7 | 1.73 |
+| experiment13: retrieval sweep, all strong models, top_k=3 | top_k_sweep | top_k | 3 | 5.251s | 30.570s | 3095.7 | 18412.9 | 3.0 | 6.0 | 0.80 |
+| experiment14: retrieval sweep, all strong models, top_k=8 | top_k_sweep | top_k | 8 | 6.269s | 68.065s | 8179.7 | 47594.7 | 8.0 | 12.6 | 1.80 |
+| experiment15: retrieval sweep, strong orchestrator only, top_k=3 | top_k_sweep | top_k | 3 | 4.992s | 31.586s | 3092.7 | 19584.9 | 3.0 | 5.5 | 0.67 |
+| experiment16: retrieval sweep, strong orchestrator only, top_k=8 | top_k_sweep | top_k | 8 | 6.553s | 71.793s | 8192.9 | 50013.1 | 8.0 | 12.1 | 1.80 |
+| experiment17: retrieval sweep, strong search agent only, top_k=3 | top_k_sweep | top_k | 3 | 4.776s | 29.083s | 3084.2 | 17693.7 | 3.0 | 5.4 | 1.07 |
+| experiment18: retrieval sweep, strong search agent only, top_k=8 | top_k_sweep | top_k | 8 | 6.257s | 65.504s | 8176.2 | 46312.5 | 8.0 | 12.1 | 1.07 |
+| experiment19: retrieval sweep, strong summarizer only, top_k=3 | top_k_sweep | top_k | 3 | 4.941s | 33.516s | 3092.1 | 20350.7 | 3.0 | 6.2 | 1.13 |
+| experiment20: retrieval sweep, strong summarizer only, top_k=8 | top_k_sweep | top_k | 8 | 6.206s | 62.899s | 8179.9 | 44761.6 | 8.0 | 12.1 | 1.00 |
+| experiment21: retrieval sweep, strong fact checker only, top_k=3 | top_k_sweep | top_k | 3 | 4.825s | 31.486s | 3084.7 | 19148.3 | 3.0 | 5.8 | 0.93 |
+| experiment22: retrieval sweep, strong fact checker only, top_k=8 | top_k_sweep | top_k | 8 | 6.913s | 73.948s | 8183.1 | 49708.3 | 8.0 | 12.2 | 1.33 |
+| experiment23: retrieval sweep, strong final synthesizer only, top_k=3 | top_k_sweep | top_k | 3 | 4.790s | 30.671s | 3078.9 | 18145.5 | 3.0 | 5.4 | 0.87 |
+| experiment24: retrieval sweep, strong final synthesizer only, top_k=8 | top_k_sweep | top_k | 8 | 6.844s | 66.247s | 8216.7 | 45203.8 | 8.0 | 12.1 | 1.53 |
 
 ## Question Coverage
 
@@ -64,13 +64,13 @@ This summary is generated from the persisted `metrics.json` files in each experi
 - control_variable: agent_architecture
 - top_k: 5
 - max_evidence_chunks: 5
-- baseline_model: gpt-4.1-mini
-- orchestrator_model: gpt-4.1-mini
-- search_model: gpt-4.1-mini
-- summarization_model: gpt-4.1-mini
-- fact_check_model: gpt-4.1-mini
-- final_synthesis_model: gpt-4.1-mini
-- judge_model: gpt-5.1
+- baseline_model: google/gemma-4-26B-A4B-it
+- orchestrator_model: google/gemma-4-26B-A4B-it
+- search_model: google/gemma-4-26B-A4B-it
+- summarization_model: google/gemma-4-26B-A4B-it
+- fact_check_model: google/gemma-4-26B-A4B-it
+- final_synthesis_model: google/gemma-4-26B-A4B-it
+- judge_model: gpt-4.1
 
 ### experiment02: model ablation, strong orchestrator only, top_k=5
 
@@ -78,13 +78,13 @@ This summary is generated from the persisted `metrics.json` files in each experi
 - control_variable: orchestrator_model
 - top_k: 5
 - max_evidence_chunks: 5
-- baseline_model: gpt-4.1-mini
-- orchestrator_model: gpt-4.1
-- search_model: gpt-4.1-mini
-- summarization_model: gpt-4.1-mini
-- fact_check_model: gpt-4.1-mini
-- final_synthesis_model: gpt-4.1-mini
-- judge_model: gpt-5.1
+- baseline_model: google/gemma-4-26B-A4B-it
+- orchestrator_model: google/gemma-4-26B-A4B-it
+- search_model: google/gemma-4-26B-A4B-it
+- summarization_model: google/gemma-4-26B-A4B-it
+- fact_check_model: google/gemma-4-26B-A4B-it
+- final_synthesis_model: google/gemma-4-26B-A4B-it
+- judge_model: gpt-4.1
 
 ### experiment03: model ablation, strong search agent only, top_k=5
 
@@ -92,13 +92,13 @@ This summary is generated from the persisted `metrics.json` files in each experi
 - control_variable: search_model
 - top_k: 5
 - max_evidence_chunks: 5
-- baseline_model: gpt-4.1-mini
-- orchestrator_model: gpt-4.1-mini
-- search_model: gpt-4.1
-- summarization_model: gpt-4.1-mini
-- fact_check_model: gpt-4.1-mini
-- final_synthesis_model: gpt-4.1-mini
-- judge_model: gpt-5.1
+- baseline_model: google/gemma-4-26B-A4B-it
+- orchestrator_model: google/gemma-4-26B-A4B-it
+- search_model: google/gemma-4-26B-A4B-it
+- summarization_model: google/gemma-4-26B-A4B-it
+- fact_check_model: google/gemma-4-26B-A4B-it
+- final_synthesis_model: google/gemma-4-26B-A4B-it
+- judge_model: gpt-4.1
 
 ### experiment04: model ablation, strong summarizer only, top_k=5
 
@@ -106,13 +106,13 @@ This summary is generated from the persisted `metrics.json` files in each experi
 - control_variable: summarization_model
 - top_k: 5
 - max_evidence_chunks: 5
-- baseline_model: gpt-4.1-mini
-- orchestrator_model: gpt-4.1-mini
-- search_model: gpt-4.1-mini
-- summarization_model: gpt-4.1
-- fact_check_model: gpt-4.1-mini
-- final_synthesis_model: gpt-4.1-mini
-- judge_model: gpt-5.1
+- baseline_model: google/gemma-4-26B-A4B-it
+- orchestrator_model: google/gemma-4-26B-A4B-it
+- search_model: google/gemma-4-26B-A4B-it
+- summarization_model: google/gemma-4-26B-A4B-it
+- fact_check_model: google/gemma-4-26B-A4B-it
+- final_synthesis_model: google/gemma-4-26B-A4B-it
+- judge_model: gpt-4.1
 
 ### experiment05: model ablation, strong fact checker only, top_k=5
 
@@ -120,13 +120,13 @@ This summary is generated from the persisted `metrics.json` files in each experi
 - control_variable: fact_check_model
 - top_k: 5
 - max_evidence_chunks: 5
-- baseline_model: gpt-4.1-mini
-- orchestrator_model: gpt-4.1-mini
-- search_model: gpt-4.1-mini
-- summarization_model: gpt-4.1-mini
-- fact_check_model: gpt-4.1
-- final_synthesis_model: gpt-4.1-mini
-- judge_model: gpt-5.1
+- baseline_model: google/gemma-4-26B-A4B-it
+- orchestrator_model: google/gemma-4-26B-A4B-it
+- search_model: google/gemma-4-26B-A4B-it
+- summarization_model: google/gemma-4-26B-A4B-it
+- fact_check_model: google/gemma-4-26B-A4B-it
+- final_synthesis_model: google/gemma-4-26B-A4B-it
+- judge_model: gpt-4.1
 
 ### experiment06: model ablation, strong final synthesizer only, top_k=5
 
@@ -134,13 +134,13 @@ This summary is generated from the persisted `metrics.json` files in each experi
 - control_variable: final_synthesis_model
 - top_k: 5
 - max_evidence_chunks: 5
-- baseline_model: gpt-4.1-mini
-- orchestrator_model: gpt-4.1-mini
-- search_model: gpt-4.1-mini
-- summarization_model: gpt-4.1-mini
-- fact_check_model: gpt-4.1-mini
-- final_synthesis_model: gpt-4.1
-- judge_model: gpt-5.1
+- baseline_model: google/gemma-4-26B-A4B-it
+- orchestrator_model: google/gemma-4-26B-A4B-it
+- search_model: google/gemma-4-26B-A4B-it
+- summarization_model: google/gemma-4-26B-A4B-it
+- fact_check_model: google/gemma-4-26B-A4B-it
+- final_synthesis_model: google/gemma-4-26B-A4B-it
+- judge_model: gpt-4.1
 
 ### experiment07: model interaction, strong checker and synthesizer, top_k=5
 
@@ -148,13 +148,13 @@ This summary is generated from the persisted `metrics.json` files in each experi
 - control_variable: fact_check_and_final_synthesis_models
 - top_k: 5
 - max_evidence_chunks: 5
-- baseline_model: gpt-4.1-mini
-- orchestrator_model: gpt-4.1-mini
-- search_model: gpt-4.1-mini
-- summarization_model: gpt-4.1-mini
-- fact_check_model: gpt-4.1
-- final_synthesis_model: gpt-4.1
-- judge_model: gpt-5.1
+- baseline_model: google/gemma-4-26B-A4B-it
+- orchestrator_model: google/gemma-4-26B-A4B-it
+- search_model: google/gemma-4-26B-A4B-it
+- summarization_model: google/gemma-4-26B-A4B-it
+- fact_check_model: google/gemma-4-26B-A4B-it
+- final_synthesis_model: google/gemma-4-26B-A4B-it
+- judge_model: gpt-4.1
 
 ### experiment08: upper bound, all strong models, top_k=5
 
@@ -162,13 +162,13 @@ This summary is generated from the persisted `metrics.json` files in each experi
 - control_variable: all_agent_models
 - top_k: 5
 - max_evidence_chunks: 5
-- baseline_model: gpt-4.1
-- orchestrator_model: gpt-4.1
-- search_model: gpt-4.1
-- summarization_model: gpt-4.1
-- fact_check_model: gpt-4.1
-- final_synthesis_model: gpt-4.1
-- judge_model: gpt-5.1
+- baseline_model: google/gemma-4-26B-A4B-it
+- orchestrator_model: google/gemma-4-26B-A4B-it
+- search_model: google/gemma-4-26B-A4B-it
+- summarization_model: google/gemma-4-26B-A4B-it
+- fact_check_model: google/gemma-4-26B-A4B-it
+- final_synthesis_model: google/gemma-4-26B-A4B-it
+- judge_model: gpt-4.1
 
 ### experiment09: retrieval sweep, all small models, top_k=3
 
@@ -176,13 +176,13 @@ This summary is generated from the persisted `metrics.json` files in each experi
 - control_variable: top_k
 - top_k: 3
 - max_evidence_chunks: 3
-- baseline_model: gpt-4.1-mini
-- orchestrator_model: gpt-4.1-mini
-- search_model: gpt-4.1-mini
-- summarization_model: gpt-4.1-mini
-- fact_check_model: gpt-4.1-mini
-- final_synthesis_model: gpt-4.1-mini
-- judge_model: gpt-5.1
+- baseline_model: google/gemma-4-26B-A4B-it
+- orchestrator_model: google/gemma-4-26B-A4B-it
+- search_model: google/gemma-4-26B-A4B-it
+- summarization_model: google/gemma-4-26B-A4B-it
+- fact_check_model: google/gemma-4-26B-A4B-it
+- final_synthesis_model: google/gemma-4-26B-A4B-it
+- judge_model: gpt-4.1
 
 ### experiment10: retrieval sweep, all small models, top_k=8
 
@@ -190,13 +190,13 @@ This summary is generated from the persisted `metrics.json` files in each experi
 - control_variable: top_k
 - top_k: 8
 - max_evidence_chunks: 8
-- baseline_model: gpt-4.1-mini
-- orchestrator_model: gpt-4.1-mini
-- search_model: gpt-4.1-mini
-- summarization_model: gpt-4.1-mini
-- fact_check_model: gpt-4.1-mini
-- final_synthesis_model: gpt-4.1-mini
-- judge_model: gpt-5.1
+- baseline_model: google/gemma-4-26B-A4B-it
+- orchestrator_model: google/gemma-4-26B-A4B-it
+- search_model: google/gemma-4-26B-A4B-it
+- summarization_model: google/gemma-4-26B-A4B-it
+- fact_check_model: google/gemma-4-26B-A4B-it
+- final_synthesis_model: google/gemma-4-26B-A4B-it
+- judge_model: gpt-4.1
 
 ### experiment11: retrieval sweep, strong checker and synthesizer, top_k=3
 
@@ -204,13 +204,13 @@ This summary is generated from the persisted `metrics.json` files in each experi
 - control_variable: top_k
 - top_k: 3
 - max_evidence_chunks: 3
-- baseline_model: gpt-4.1-mini
-- orchestrator_model: gpt-4.1-mini
-- search_model: gpt-4.1-mini
-- summarization_model: gpt-4.1-mini
-- fact_check_model: gpt-4.1
-- final_synthesis_model: gpt-4.1
-- judge_model: gpt-5.1
+- baseline_model: google/gemma-4-26B-A4B-it
+- orchestrator_model: google/gemma-4-26B-A4B-it
+- search_model: google/gemma-4-26B-A4B-it
+- summarization_model: google/gemma-4-26B-A4B-it
+- fact_check_model: google/gemma-4-26B-A4B-it
+- final_synthesis_model: google/gemma-4-26B-A4B-it
+- judge_model: gpt-4.1
 
 ### experiment12: retrieval sweep, strong checker and synthesizer, top_k=8
 
@@ -218,13 +218,13 @@ This summary is generated from the persisted `metrics.json` files in each experi
 - control_variable: top_k
 - top_k: 8
 - max_evidence_chunks: 8
-- baseline_model: gpt-4.1-mini
-- orchestrator_model: gpt-4.1-mini
-- search_model: gpt-4.1-mini
-- summarization_model: gpt-4.1-mini
-- fact_check_model: gpt-4.1
-- final_synthesis_model: gpt-4.1
-- judge_model: gpt-5.1
+- baseline_model: google/gemma-4-26B-A4B-it
+- orchestrator_model: google/gemma-4-26B-A4B-it
+- search_model: google/gemma-4-26B-A4B-it
+- summarization_model: google/gemma-4-26B-A4B-it
+- fact_check_model: google/gemma-4-26B-A4B-it
+- final_synthesis_model: google/gemma-4-26B-A4B-it
+- judge_model: gpt-4.1
 
 ### experiment13: retrieval sweep, all strong models, top_k=3
 
@@ -232,13 +232,13 @@ This summary is generated from the persisted `metrics.json` files in each experi
 - control_variable: top_k
 - top_k: 3
 - max_evidence_chunks: 3
-- baseline_model: gpt-4.1
-- orchestrator_model: gpt-4.1
-- search_model: gpt-4.1
-- summarization_model: gpt-4.1
-- fact_check_model: gpt-4.1
-- final_synthesis_model: gpt-4.1
-- judge_model: gpt-5.1
+- baseline_model: google/gemma-4-26B-A4B-it
+- orchestrator_model: google/gemma-4-26B-A4B-it
+- search_model: google/gemma-4-26B-A4B-it
+- summarization_model: google/gemma-4-26B-A4B-it
+- fact_check_model: google/gemma-4-26B-A4B-it
+- final_synthesis_model: google/gemma-4-26B-A4B-it
+- judge_model: gpt-4.1
 
 ### experiment14: retrieval sweep, all strong models, top_k=8
 
@@ -246,13 +246,13 @@ This summary is generated from the persisted `metrics.json` files in each experi
 - control_variable: top_k
 - top_k: 8
 - max_evidence_chunks: 8
-- baseline_model: gpt-4.1
-- orchestrator_model: gpt-4.1
-- search_model: gpt-4.1
-- summarization_model: gpt-4.1
-- fact_check_model: gpt-4.1
-- final_synthesis_model: gpt-4.1
-- judge_model: gpt-5.1
+- baseline_model: google/gemma-4-26B-A4B-it
+- orchestrator_model: google/gemma-4-26B-A4B-it
+- search_model: google/gemma-4-26B-A4B-it
+- summarization_model: google/gemma-4-26B-A4B-it
+- fact_check_model: google/gemma-4-26B-A4B-it
+- final_synthesis_model: google/gemma-4-26B-A4B-it
+- judge_model: gpt-4.1
 
 ### experiment15: retrieval sweep, strong orchestrator only, top_k=3
 
@@ -260,13 +260,13 @@ This summary is generated from the persisted `metrics.json` files in each experi
 - control_variable: top_k
 - top_k: 3
 - max_evidence_chunks: 3
-- baseline_model: gpt-4.1-mini
-- orchestrator_model: gpt-4.1
-- search_model: gpt-4.1-mini
-- summarization_model: gpt-4.1-mini
-- fact_check_model: gpt-4.1-mini
-- final_synthesis_model: gpt-4.1-mini
-- judge_model: gpt-5.1
+- baseline_model: google/gemma-4-26B-A4B-it
+- orchestrator_model: google/gemma-4-26B-A4B-it
+- search_model: google/gemma-4-26B-A4B-it
+- summarization_model: google/gemma-4-26B-A4B-it
+- fact_check_model: google/gemma-4-26B-A4B-it
+- final_synthesis_model: google/gemma-4-26B-A4B-it
+- judge_model: gpt-4.1
 
 ### experiment16: retrieval sweep, strong orchestrator only, top_k=8
 
@@ -274,13 +274,13 @@ This summary is generated from the persisted `metrics.json` files in each experi
 - control_variable: top_k
 - top_k: 8
 - max_evidence_chunks: 8
-- baseline_model: gpt-4.1-mini
-- orchestrator_model: gpt-4.1
-- search_model: gpt-4.1-mini
-- summarization_model: gpt-4.1-mini
-- fact_check_model: gpt-4.1-mini
-- final_synthesis_model: gpt-4.1-mini
-- judge_model: gpt-5.1
+- baseline_model: google/gemma-4-26B-A4B-it
+- orchestrator_model: google/gemma-4-26B-A4B-it
+- search_model: google/gemma-4-26B-A4B-it
+- summarization_model: google/gemma-4-26B-A4B-it
+- fact_check_model: google/gemma-4-26B-A4B-it
+- final_synthesis_model: google/gemma-4-26B-A4B-it
+- judge_model: gpt-4.1
 
 ### experiment17: retrieval sweep, strong search agent only, top_k=3
 
@@ -288,13 +288,13 @@ This summary is generated from the persisted `metrics.json` files in each experi
 - control_variable: top_k
 - top_k: 3
 - max_evidence_chunks: 3
-- baseline_model: gpt-4.1-mini
-- orchestrator_model: gpt-4.1-mini
-- search_model: gpt-4.1
-- summarization_model: gpt-4.1-mini
-- fact_check_model: gpt-4.1-mini
-- final_synthesis_model: gpt-4.1-mini
-- judge_model: gpt-5.1
+- baseline_model: google/gemma-4-26B-A4B-it
+- orchestrator_model: google/gemma-4-26B-A4B-it
+- search_model: google/gemma-4-26B-A4B-it
+- summarization_model: google/gemma-4-26B-A4B-it
+- fact_check_model: google/gemma-4-26B-A4B-it
+- final_synthesis_model: google/gemma-4-26B-A4B-it
+- judge_model: gpt-4.1
 
 ### experiment18: retrieval sweep, strong search agent only, top_k=8
 
@@ -302,13 +302,13 @@ This summary is generated from the persisted `metrics.json` files in each experi
 - control_variable: top_k
 - top_k: 8
 - max_evidence_chunks: 8
-- baseline_model: gpt-4.1-mini
-- orchestrator_model: gpt-4.1-mini
-- search_model: gpt-4.1
-- summarization_model: gpt-4.1-mini
-- fact_check_model: gpt-4.1-mini
-- final_synthesis_model: gpt-4.1-mini
-- judge_model: gpt-5.1
+- baseline_model: google/gemma-4-26B-A4B-it
+- orchestrator_model: google/gemma-4-26B-A4B-it
+- search_model: google/gemma-4-26B-A4B-it
+- summarization_model: google/gemma-4-26B-A4B-it
+- fact_check_model: google/gemma-4-26B-A4B-it
+- final_synthesis_model: google/gemma-4-26B-A4B-it
+- judge_model: gpt-4.1
 
 ### experiment19: retrieval sweep, strong summarizer only, top_k=3
 
@@ -316,13 +316,13 @@ This summary is generated from the persisted `metrics.json` files in each experi
 - control_variable: top_k
 - top_k: 3
 - max_evidence_chunks: 3
-- baseline_model: gpt-4.1-mini
-- orchestrator_model: gpt-4.1-mini
-- search_model: gpt-4.1-mini
-- summarization_model: gpt-4.1
-- fact_check_model: gpt-4.1-mini
-- final_synthesis_model: gpt-4.1-mini
-- judge_model: gpt-5.1
+- baseline_model: google/gemma-4-26B-A4B-it
+- orchestrator_model: google/gemma-4-26B-A4B-it
+- search_model: google/gemma-4-26B-A4B-it
+- summarization_model: google/gemma-4-26B-A4B-it
+- fact_check_model: google/gemma-4-26B-A4B-it
+- final_synthesis_model: google/gemma-4-26B-A4B-it
+- judge_model: gpt-4.1
 
 ### experiment20: retrieval sweep, strong summarizer only, top_k=8
 
@@ -330,13 +330,13 @@ This summary is generated from the persisted `metrics.json` files in each experi
 - control_variable: top_k
 - top_k: 8
 - max_evidence_chunks: 8
-- baseline_model: gpt-4.1-mini
-- orchestrator_model: gpt-4.1-mini
-- search_model: gpt-4.1-mini
-- summarization_model: gpt-4.1
-- fact_check_model: gpt-4.1-mini
-- final_synthesis_model: gpt-4.1-mini
-- judge_model: gpt-5.1
+- baseline_model: google/gemma-4-26B-A4B-it
+- orchestrator_model: google/gemma-4-26B-A4B-it
+- search_model: google/gemma-4-26B-A4B-it
+- summarization_model: google/gemma-4-26B-A4B-it
+- fact_check_model: google/gemma-4-26B-A4B-it
+- final_synthesis_model: google/gemma-4-26B-A4B-it
+- judge_model: gpt-4.1
 
 ### experiment21: retrieval sweep, strong fact checker only, top_k=3
 
@@ -344,13 +344,13 @@ This summary is generated from the persisted `metrics.json` files in each experi
 - control_variable: top_k
 - top_k: 3
 - max_evidence_chunks: 3
-- baseline_model: gpt-4.1-mini
-- orchestrator_model: gpt-4.1-mini
-- search_model: gpt-4.1-mini
-- summarization_model: gpt-4.1-mini
-- fact_check_model: gpt-4.1
-- final_synthesis_model: gpt-4.1-mini
-- judge_model: gpt-5.1
+- baseline_model: google/gemma-4-26B-A4B-it
+- orchestrator_model: google/gemma-4-26B-A4B-it
+- search_model: google/gemma-4-26B-A4B-it
+- summarization_model: google/gemma-4-26B-A4B-it
+- fact_check_model: google/gemma-4-26B-A4B-it
+- final_synthesis_model: google/gemma-4-26B-A4B-it
+- judge_model: gpt-4.1
 
 ### experiment22: retrieval sweep, strong fact checker only, top_k=8
 
@@ -358,13 +358,13 @@ This summary is generated from the persisted `metrics.json` files in each experi
 - control_variable: top_k
 - top_k: 8
 - max_evidence_chunks: 8
-- baseline_model: gpt-4.1-mini
-- orchestrator_model: gpt-4.1-mini
-- search_model: gpt-4.1-mini
-- summarization_model: gpt-4.1-mini
-- fact_check_model: gpt-4.1
-- final_synthesis_model: gpt-4.1-mini
-- judge_model: gpt-5.1
+- baseline_model: google/gemma-4-26B-A4B-it
+- orchestrator_model: google/gemma-4-26B-A4B-it
+- search_model: google/gemma-4-26B-A4B-it
+- summarization_model: google/gemma-4-26B-A4B-it
+- fact_check_model: google/gemma-4-26B-A4B-it
+- final_synthesis_model: google/gemma-4-26B-A4B-it
+- judge_model: gpt-4.1
 
 ### experiment23: retrieval sweep, strong final synthesizer only, top_k=3
 
@@ -372,13 +372,13 @@ This summary is generated from the persisted `metrics.json` files in each experi
 - control_variable: top_k
 - top_k: 3
 - max_evidence_chunks: 3
-- baseline_model: gpt-4.1-mini
-- orchestrator_model: gpt-4.1-mini
-- search_model: gpt-4.1-mini
-- summarization_model: gpt-4.1-mini
-- fact_check_model: gpt-4.1-mini
-- final_synthesis_model: gpt-4.1
-- judge_model: gpt-5.1
+- baseline_model: google/gemma-4-26B-A4B-it
+- orchestrator_model: google/gemma-4-26B-A4B-it
+- search_model: google/gemma-4-26B-A4B-it
+- summarization_model: google/gemma-4-26B-A4B-it
+- fact_check_model: google/gemma-4-26B-A4B-it
+- final_synthesis_model: google/gemma-4-26B-A4B-it
+- judge_model: gpt-4.1
 
 ### experiment24: retrieval sweep, strong final synthesizer only, top_k=8
 
@@ -386,64 +386,64 @@ This summary is generated from the persisted `metrics.json` files in each experi
 - control_variable: top_k
 - top_k: 8
 - max_evidence_chunks: 8
-- baseline_model: gpt-4.1-mini
-- orchestrator_model: gpt-4.1-mini
-- search_model: gpt-4.1-mini
-- summarization_model: gpt-4.1-mini
-- fact_check_model: gpt-4.1-mini
-- final_synthesis_model: gpt-4.1
-- judge_model: gpt-5.1
+- baseline_model: google/gemma-4-26B-A4B-it
+- orchestrator_model: google/gemma-4-26B-A4B-it
+- search_model: google/gemma-4-26B-A4B-it
+- summarization_model: google/gemma-4-26B-A4B-it
+- fact_check_model: google/gemma-4-26B-A4B-it
+- final_synthesis_model: google/gemma-4-26B-A4B-it
+- judge_model: gpt-4.1
 
 
 ## External Judge Averages
 
 | Experiment | System | Factual Accuracy | Completeness | Citation Quality | Clarity | Unsupported Claims |
 |---|---|---:|---:|---:|---:|---:|
-| experiment01: architecture control, all small models, top_k=5 | baseline | 3.93 | 3.67 | 3.33 | 4.53 | 1.27 |
-| experiment01: architecture control, all small models, top_k=5 | multi_agent | 3.67 | 3.20 | 3.33 | 4.40 | 1.27 |
-| experiment02: model ablation, strong orchestrator only, top_k=5 | baseline | 4.27 | 3.73 | 3.40 | 4.67 | 1.13 |
-| experiment02: model ablation, strong orchestrator only, top_k=5 | multi_agent | 3.87 | 3.33 | 3.67 | 4.60 | 1.33 |
-| experiment03: model ablation, strong search agent only, top_k=5 | baseline | 4.07 | 3.53 | 3.07 | 4.73 | 1.27 |
-| experiment03: model ablation, strong search agent only, top_k=5 | multi_agent | 4.13 | 3.13 | 3.47 | 4.60 | 0.93 |
-| experiment04: model ablation, strong summarizer only, top_k=5 | baseline | 4.20 | 3.67 | 3.20 | 4.53 | 1.07 |
-| experiment04: model ablation, strong summarizer only, top_k=5 | multi_agent | 4.20 | 3.00 | 3.67 | 4.53 | 1.00 |
-| experiment05: model ablation, strong fact checker only, top_k=5 | baseline | 4.13 | 3.60 | 3.33 | 4.73 | 1.33 |
-| experiment05: model ablation, strong fact checker only, top_k=5 | multi_agent | 3.87 | 3.13 | 3.20 | 4.33 | 0.93 |
-| experiment06: model ablation, strong final synthesizer only, top_k=5 | baseline | 4.13 | 3.80 | 3.27 | 4.60 | 1.27 |
-| experiment06: model ablation, strong final synthesizer only, top_k=5 | multi_agent | 4.00 | 3.07 | 3.47 | 4.47 | 1.20 |
-| experiment07: model interaction, strong checker and synthesizer, top_k=5 | baseline | 5.00 | 3.53 | 3.80 | 4.93 | 0.00 |
-| experiment07: model interaction, strong checker and synthesizer, top_k=5 | multi_agent | 5.00 | 4.00 | 2.60 | 5.00 | 0.00 |
-| experiment08: upper bound, all strong models, top_k=5 | baseline | 5.00 | 3.67 | 3.80 | 5.00 | 0.00 |
-| experiment08: upper bound, all strong models, top_k=5 | multi_agent | 4.93 | 4.47 | 2.47 | 5.00 | 0.00 |
-| experiment09: retrieval sweep, all small models, top_k=3 | baseline | 5.00 | 3.33 | 3.40 | 5.00 | 0.00 |
-| experiment09: retrieval sweep, all small models, top_k=3 | multi_agent | 4.80 | 3.93 | 2.07 | 4.87 | 0.13 |
-| experiment10: retrieval sweep, all small models, top_k=8 | baseline | 5.00 | 3.60 | 3.40 | 4.93 | 0.00 |
-| experiment10: retrieval sweep, all small models, top_k=8 | multi_agent | 5.00 | 3.27 | 2.33 | 5.00 | 0.00 |
-| experiment11: retrieval sweep, strong checker and synthesizer, top_k=3 | baseline | 4.80 | 4.20 | 3.93 | 4.93 | 0.07 |
-| experiment11: retrieval sweep, strong checker and synthesizer, top_k=3 | multi_agent | 5.00 | 4.27 | 2.47 | 4.93 | 0.07 |
-| experiment12: retrieval sweep, strong checker and synthesizer, top_k=8 | baseline | 5.00 | 4.20 | 3.93 | 5.00 | 0.00 |
-| experiment12: retrieval sweep, strong checker and synthesizer, top_k=8 | multi_agent | 4.87 | 4.20 | 3.53 | 5.00 | 0.00 |
-| experiment13: retrieval sweep, all strong models, top_k=3 | baseline | 4.93 | 3.20 | 2.73 | 5.00 | 0.07 |
-| experiment13: retrieval sweep, all strong models, top_k=3 | multi_agent | 5.00 | 4.47 | 3.27 | 5.00 | 0.00 |
-| experiment14: retrieval sweep, all strong models, top_k=8 | baseline | 4.80 | 3.27 | 3.13 | 4.93 | 0.00 |
-| experiment14: retrieval sweep, all strong models, top_k=8 | multi_agent | 5.00 | 3.47 | 3.07 | 4.93 | 0.00 |
-| experiment15: retrieval sweep, strong orchestrator only, top_k=3 | baseline | 5.00 | 4.00 | 4.47 | 5.00 | 0.00 |
-| experiment15: retrieval sweep, strong orchestrator only, top_k=3 | multi_agent | 5.00 | 3.67 | 2.00 | 4.93 | 0.00 |
-| experiment16: retrieval sweep, strong orchestrator only, top_k=8 | baseline | 5.00 | 4.13 | 3.93 | 5.00 | 0.00 |
-| experiment16: retrieval sweep, strong orchestrator only, top_k=8 | multi_agent | 4.80 | 3.93 | 2.07 | 4.87 | 0.13 |
-| experiment17: retrieval sweep, strong search agent only, top_k=3 | baseline | 5.00 | 4.27 | 4.33 | 5.00 | 0.00 |
-| experiment17: retrieval sweep, strong search agent only, top_k=3 | multi_agent | 5.00 | 3.40 | 1.80 | 4.93 | 0.00 |
-| experiment18: retrieval sweep, strong search agent only, top_k=8 | baseline | 5.00 | 3.87 | 3.27 | 5.00 | 0.00 |
-| experiment18: retrieval sweep, strong search agent only, top_k=8 | multi_agent | 4.93 | 3.60 | 2.20 | 4.93 | 0.07 |
-| experiment19: retrieval sweep, strong summarizer only, top_k=3 | baseline | 5.00 | 3.67 | 3.13 | 4.93 | 0.00 |
-| experiment19: retrieval sweep, strong summarizer only, top_k=3 | multi_agent | 4.93 | 3.73 | 1.27 | 4.93 | 0.07 |
-| experiment20: retrieval sweep, strong summarizer only, top_k=8 | baseline | 5.00 | 3.47 | 3.40 | 5.00 | 0.00 |
-| experiment20: retrieval sweep, strong summarizer only, top_k=8 | multi_agent | 5.00 | 3.87 | 2.33 | 4.87 | 0.00 |
-| experiment21: retrieval sweep, strong fact checker only, top_k=3 | baseline | 5.00 | 4.00 | 3.93 | 5.00 | 0.00 |
-| experiment21: retrieval sweep, strong fact checker only, top_k=3 | multi_agent | 5.00 | 3.40 | 1.27 | 4.93 | 0.00 |
-| experiment22: retrieval sweep, strong fact checker only, top_k=8 | baseline | 5.00 | 3.67 | 3.67 | 5.00 | 0.00 |
-| experiment22: retrieval sweep, strong fact checker only, top_k=8 | multi_agent | 4.87 | 3.73 | 1.80 | 4.93 | 0.07 |
-| experiment23: retrieval sweep, strong final synthesizer only, top_k=3 | baseline | 5.00 | 3.73 | 4.20 | 4.93 | 0.00 |
-| experiment23: retrieval sweep, strong final synthesizer only, top_k=3 | multi_agent | 5.00 | 3.47 | 2.07 | 4.93 | 0.00 |
-| experiment24: retrieval sweep, strong final synthesizer only, top_k=8 | baseline | 5.00 | 4.13 | 4.73 | 4.93 | 0.00 |
-| experiment24: retrieval sweep, strong final synthesizer only, top_k=8 | multi_agent | 4.93 | 3.53 | 2.73 | 4.87 | 0.07 |
+| experiment01: architecture control, all small models, top_k=5 | baseline | 6.67 | 7.13 | 6.80 | 8.80 | 0.93 |
+| experiment01: architecture control, all small models, top_k=5 | multi_agent | 6.60 | 7.07 | 6.73 | 8.60 | 0.67 |
+| experiment02: model ablation, strong orchestrator only, top_k=5 | baseline | 6.93 | 7.07 | 7.40 | 8.67 | 0.60 |
+| experiment02: model ablation, strong orchestrator only, top_k=5 | multi_agent | 6.73 | 7.27 | 7.00 | 8.60 | 0.53 |
+| experiment03: model ablation, strong search agent only, top_k=5 | baseline | 7.20 | 7.53 | 7.07 | 8.87 | 1.13 |
+| experiment03: model ablation, strong search agent only, top_k=5 | multi_agent | 6.80 | 7.07 | 6.67 | 8.53 | 0.80 |
+| experiment04: model ablation, strong summarizer only, top_k=5 | baseline | 7.00 | 7.40 | 6.73 | 8.53 | 1.47 |
+| experiment04: model ablation, strong summarizer only, top_k=5 | multi_agent | 6.47 | 6.93 | 6.40 | 8.20 | 0.80 |
+| experiment05: model ablation, strong fact checker only, top_k=5 | baseline | 6.67 | 7.33 | 6.93 | 8.87 | 1.00 |
+| experiment05: model ablation, strong fact checker only, top_k=5 | multi_agent | 6.60 | 6.80 | 6.47 | 8.67 | 1.40 |
+| experiment06: model ablation, strong final synthesizer only, top_k=5 | baseline | 6.73 | 7.07 | 6.73 | 8.67 | 1.20 |
+| experiment06: model ablation, strong final synthesizer only, top_k=5 | multi_agent | 6.80 | 6.93 | 6.73 | 8.67 | 0.73 |
+| experiment07: model interaction, strong checker and synthesizer, top_k=5 | baseline | 6.33 | 6.60 | 6.60 | 8.27 | 0.60 |
+| experiment07: model interaction, strong checker and synthesizer, top_k=5 | multi_agent | 6.87 | 7.00 | 7.20 | 8.60 | 0.87 |
+| experiment08: upper bound, all strong models, top_k=5 | baseline | 7.00 | 7.33 | 6.80 | 8.67 | 1.20 |
+| experiment08: upper bound, all strong models, top_k=5 | multi_agent | 6.47 | 6.60 | 6.60 | 8.13 | 1.20 |
+| experiment09: retrieval sweep, all small models, top_k=3 | baseline | 6.40 | 6.53 | 6.53 | 8.13 | 0.27 |
+| experiment09: retrieval sweep, all small models, top_k=3 | multi_agent | 6.27 | 6.53 | 6.80 | 8.60 | 0.53 |
+| experiment10: retrieval sweep, all small models, top_k=8 | baseline | 7.07 | 7.93 | 7.07 | 8.73 | 1.13 |
+| experiment10: retrieval sweep, all small models, top_k=8 | multi_agent | 6.87 | 7.27 | 7.00 | 8.53 | 0.60 |
+| experiment11: retrieval sweep, strong checker and synthesizer, top_k=3 | baseline | 7.07 | 7.20 | 7.53 | 8.80 | 0.47 |
+| experiment11: retrieval sweep, strong checker and synthesizer, top_k=3 | multi_agent | 6.53 | 6.40 | 6.40 | 8.27 | 0.67 |
+| experiment12: retrieval sweep, strong checker and synthesizer, top_k=8 | baseline | 7.40 | 7.80 | 7.20 | 8.93 | 0.87 |
+| experiment12: retrieval sweep, strong checker and synthesizer, top_k=8 | multi_agent | 7.00 | 7.53 | 6.87 | 8.60 | 0.60 |
+| experiment13: retrieval sweep, all strong models, top_k=3 | baseline | 6.87 | 7.07 | 6.80 | 8.80 | 0.40 |
+| experiment13: retrieval sweep, all strong models, top_k=3 | multi_agent | 6.93 | 7.13 | 6.73 | 8.80 | 0.33 |
+| experiment14: retrieval sweep, all strong models, top_k=8 | baseline | 7.20 | 7.73 | 7.07 | 8.93 | 1.33 |
+| experiment14: retrieval sweep, all strong models, top_k=8 | multi_agent | 6.73 | 7.07 | 6.93 | 8.87 | 0.47 |
+| experiment15: retrieval sweep, strong orchestrator only, top_k=3 | baseline | 6.93 | 7.07 | 7.13 | 8.93 | 0.40 |
+| experiment15: retrieval sweep, strong orchestrator only, top_k=3 | multi_agent | 6.53 | 6.40 | 6.47 | 8.47 | 0.80 |
+| experiment16: retrieval sweep, strong orchestrator only, top_k=8 | baseline | 6.87 | 7.00 | 6.73 | 8.33 | 0.60 |
+| experiment16: retrieval sweep, strong orchestrator only, top_k=8 | multi_agent | 6.60 | 6.93 | 6.87 | 8.40 | 1.13 |
+| experiment17: retrieval sweep, strong search agent only, top_k=3 | baseline | 6.93 | 7.20 | 7.27 | 8.80 | 0.73 |
+| experiment17: retrieval sweep, strong search agent only, top_k=3 | multi_agent | 6.53 | 6.60 | 6.53 | 8.53 | 0.47 |
+| experiment18: retrieval sweep, strong search agent only, top_k=8 | baseline | 7.53 | 8.00 | 7.40 | 9.00 | 0.87 |
+| experiment18: retrieval sweep, strong search agent only, top_k=8 | multi_agent | 6.87 | 7.33 | 7.13 | 8.60 | 0.67 |
+| experiment19: retrieval sweep, strong summarizer only, top_k=3 | baseline | 7.00 | 7.33 | 7.27 | 8.73 | 0.67 |
+| experiment19: retrieval sweep, strong summarizer only, top_k=3 | multi_agent | 6.80 | 6.80 | 6.87 | 8.40 | 0.80 |
+| experiment20: retrieval sweep, strong summarizer only, top_k=8 | baseline | 7.47 | 7.93 | 7.53 | 8.87 | 0.73 |
+| experiment20: retrieval sweep, strong summarizer only, top_k=8 | multi_agent | 6.60 | 7.07 | 6.73 | 8.53 | 0.87 |
+| experiment21: retrieval sweep, strong fact checker only, top_k=3 | baseline | 7.13 | 7.20 | 7.27 | 8.93 | 0.53 |
+| experiment21: retrieval sweep, strong fact checker only, top_k=3 | multi_agent | 6.40 | 6.20 | 6.27 | 8.33 | 1.40 |
+| experiment22: retrieval sweep, strong fact checker only, top_k=8 | baseline | 7.20 | 7.60 | 7.27 | 8.93 | 0.60 |
+| experiment22: retrieval sweep, strong fact checker only, top_k=8 | multi_agent | 6.93 | 7.00 | 6.87 | 8.67 | 1.13 |
+| experiment23: retrieval sweep, strong final synthesizer only, top_k=3 | baseline | 6.93 | 6.80 | 6.93 | 8.80 | 0.33 |
+| experiment23: retrieval sweep, strong final synthesizer only, top_k=3 | multi_agent | 6.67 | 6.47 | 6.47 | 8.20 | 0.80 |
+| experiment24: retrieval sweep, strong final synthesizer only, top_k=8 | baseline | 7.20 | 7.67 | 7.07 | 8.93 | 1.20 |
+| experiment24: retrieval sweep, strong final synthesizer only, top_k=8 | multi_agent | 6.87 | 7.20 | 7.00 | 8.73 | 0.87 |

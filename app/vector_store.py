@@ -1,14 +1,12 @@
 from __future__ import annotations
 
+import json
 import logging
+import numpy as np
 from collections.abc import Mapping
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
-
-from pinecone import ServerlessSpec
-from pinecone.grpc import GRPCClientConfig, PineconeGRPC
-
-from app.config import PineconeSettings
 
 logger = logging.getLogger(__name__)
 
@@ -28,19 +26,23 @@ class RetrievedRecord:
 
 
 class PineconeVectorStore:
-    def __init__(self, settings: PineconeSettings) -> None:
+    """In-process vector store using numpy cosine similarity.
+    Drop-in replacement for the Pinecone-backed store — same public API.
+    Persists to a JSON file so data survives across runs.
+    """
+
+    def __init__(self, settings: Any) -> None:
         self.settings = settings
+        self._store_path = Path(getattr(settings, "vector_store_path", "data/vector_store.json"))
+        self._ids: list[str] = []
+        self._vectors: list[list[float]] = []
+        self._metadata: list[dict[str, Any]] = []
+        self._load()
         logger.info(
-            "Connecting to Pinecone host=%s index=%s namespace=%s",
-            settings.pinecone_host,
-            settings.pinecone_index_name,
-            settings.pinecone_namespace,
+            "Local vector store ready path=%s records=%s",
+            self._store_path,
+            len(self._ids),
         )
-        self._client = PineconeGRPC(api_key=settings.pinecone_api_key, host=settings.pinecone_host)
-        self._ensure_index()
-        index_host = self._client.describe_index(name=settings.pinecone_index_name).host
-        self._index = self._client.Index(host=index_host, grpc_config=GRPCClientConfig(secure=False))
-        logger.info("Pinecone index ready index=%s host=%s", settings.pinecone_index_name, index_host)
 
     def insert_embedding(
         self,
@@ -59,70 +61,74 @@ class PineconeVectorStore:
         )
 
     def insert_embeddings(self, records: list[EmbeddingRecord]) -> None:
-        logger.info(
-            "Upserting embeddings count=%s index=%s namespace=%s",
-            len(records),
-            self.settings.pinecone_index_name,
-            self.settings.pinecone_namespace,
-        )
-        vectors = [
-            {
-                "id": record.id,
-                "values": record.values,
-                "metadata": dict(record.metadata),
-            }
-            for record in records
-        ]
-        self._index.upsert(vectors=vectors, namespace=self.settings.pinecone_namespace)
-        logger.info("Upsert complete count=%s", len(records))
+        logger.info("Upserting embeddings count=%s", len(records))
+        existing_ids = {rid: idx for idx, rid in enumerate(self._ids)}
+        for record in records:
+            meta = dict(record.metadata)
+            if record.id in existing_ids:
+                idx = existing_ids[record.id]
+                self._vectors[idx] = record.values
+                self._metadata[idx] = meta
+            else:
+                existing_ids[record.id] = len(self._ids)
+                self._ids.append(record.id)
+                self._vectors.append(record.values)
+                self._metadata.append(meta)
+        self._save()
+        logger.info("Upsert complete count=%s total=%s", len(records), len(self._ids))
 
     def query(self, embedding: list[float], top_k: int = 5) -> list[RetrievedRecord]:
         if top_k <= 0:
             raise ValueError("top_k must be greater than 0")
 
-        logger.info(
-            "Querying Pinecone index=%s namespace=%s top_k=%s vector_dimensions=%s",
-            self.settings.pinecone_index_name,
-            self.settings.pinecone_namespace,
-            top_k,
-            len(embedding),
-        )
-        response = self._index.query(
-            vector=embedding,
-            top_k=top_k,
-            namespace=self.settings.pinecone_namespace,
-            include_metadata=True,
-        )
+        if not self._ids:
+            logger.info("Query on empty store, returning no results")
+            return []
 
-        matches = getattr(response, "matches", None) or []
+        logger.info("Querying local vector store top_k=%s records=%s", top_k, len(self._ids))
+        query_vec = np.array(embedding, dtype=np.float32)
+        query_norm = np.linalg.norm(query_vec)
+        if query_norm == 0:
+            return []
+
+        matrix = np.array(self._vectors, dtype=np.float32)
+        norms = np.linalg.norm(matrix, axis=1)
+        norms[norms == 0] = 1.0
+        scores = matrix @ query_vec / (norms * query_norm)
+
+        top_indices = np.argsort(scores)[::-1][:top_k]
+
         records = [
             RetrievedRecord(
-                id=match.get("id") if isinstance(match, dict) else match.id,
-                score=match.get("score") if isinstance(match, dict) else match.score,
-                metadata=match.get("metadata", {}) if isinstance(match, dict) else match.metadata or {},
+                id=self._ids[i],
+                score=float(scores[i]),
+                metadata=self._metadata[i],
             )
-            for match in matches
+            for i in top_indices
         ]
-        logger.info("Pinecone query returned matches=%s", len(records))
+        logger.info("Query returned matches=%s", len(records))
         return records
 
-    def _ensure_index(self) -> None:
-        if self._client.has_index(self.settings.pinecone_index_name):
-            logger.info("Pinecone index already exists index=%s", self.settings.pinecone_index_name)
+    def _load(self) -> None:
+        if not self._store_path.exists():
+            logger.info("No existing vector store at path=%s", self._store_path)
             return
+        try:
+            payload = json.loads(self._store_path.read_text(encoding="utf-8"))
+            self._ids = payload.get("ids", [])
+            self._vectors = payload.get("vectors", [])
+            self._metadata = payload.get("metadata", [])
+            logger.info("Loaded vector store path=%s records=%s", self._store_path, len(self._ids))
+        except (json.JSONDecodeError, KeyError) as exc:
+            logger.warning("Could not load vector store path=%s error=%s, starting fresh", self._store_path, exc)
 
-        logger.info(
-            "Creating Pinecone index index=%s dimension=%s metric=%s",
-            self.settings.pinecone_index_name,
-            self.settings.pinecone_dimension,
-            self.settings.pinecone_metric,
-        )
-        self._client.create_index(
-            name=self.settings.pinecone_index_name,
-            vector_type="dense",
-            dimension=self.settings.pinecone_dimension,
-            metric=self.settings.pinecone_metric,
-            spec=ServerlessSpec(cloud="aws", region="us-east-1"),
-            deletion_protection="disabled",
-            tags={"environment": "local"},
-        )
+    def _save(self) -> None:
+        self._store_path.parent.mkdir(parents=True, exist_ok=True)
+        tmp_path = self._store_path.with_suffix(".json.tmp")
+        payload = {
+            "ids": self._ids,
+            "vectors": self._vectors,
+            "metadata": self._metadata,
+        }
+        tmp_path.write_text(json.dumps(payload), encoding="utf-8")
+        tmp_path.replace(self._store_path)

@@ -6,12 +6,12 @@
 - control_variable: summarization_model
 - top_k: 5
 - max_evidence_chunks: 5
-- baseline_model: gpt-4.1-mini
-- orchestrator_model: gpt-4.1-mini
-- search_model: gpt-4.1-mini
-- summarization_model: gpt-4.1
-- fact_check_model: gpt-4.1-mini
-- final_synthesis_model: gpt-4.1-mini
+- baseline_model: google/gemma-4-26B-A4B-it
+- orchestrator_model: google/gemma-4-26B-A4B-it
+- search_model: google/gemma-4-26B-A4B-it
+- summarization_model: google/gemma-4-26B-A4B-it
+- fact_check_model: google/gemma-4-26B-A4B-it
+- final_synthesis_model: google/gemma-4-26B-A4B-it
 
 ## Question 1
 
@@ -21,26 +21,36 @@ What external knowledge source or corpus does REALM retrieve from, and how is it
 
 ### Baseline Answer
 
-The REALM model retrieves from an external textual knowledge source, specifically a learned textual knowledge retriever is used to augment language model pre-training. Unlike models that store all knowledge in their parameters, REALM explicitly integrates world knowledge by asking the model to retrieve relevant information from this external corpus during pre-training. However, the exact external knowledge corpus used by REALM (e.g. Wikipedia or other text collections) is not specified in the provided context.
+REALM retrieves from a large textual knowledge corpus $Z$, such as Wikipedia [1, 2].
 
-Thus, from the given context, it is clear that REALM uses a learned textual knowledge retriever to access external textual knowledge to augment pre-training, though the precise source corpus is not detailed here [1][2][3][4][5].
+The model uses this knowledge through a "retrieve-then-predict" generative process [3]. Specifically:
+*   **Retrieval:** Given an input $x$, the model first uses a learned textual knowledge retriever to retrieve potentially helpful documents $z$ from the knowledge corpus $Z$ [1, 3]. This retrieval is modeled as a sample from the distribution $p(z |x)$ [3].
+*   **Prediction:** The model then conditions on both the retrieved documents $z$ and the original input $x$ to generate the output $y$, modeled as $p(y |z, x)$ [3]. The language model attends over the retrieved documents to help inform its prediction [1].
 
-Citations:  
-[1][2][3][4][5] data/2002.08909v1.pdf (chunks 84.0, 85.0, 96.0, 115.0, 120.0)
+This framework is used during pre-training, fine-tuning, and inference [2].
+
+Citations:
+[1] source: data/2002.08909v1.pdf, chunk_id: 2002.08909v1-1-4db590f52f9234a64d454952
+[2] source: data/2002.08909v1.pdf, chunk_id: 2002.08909v1-0-7d4268087c32fc1b944606b2
+[3] source: data/2002.08909v1.pdf, chunk_id: 2002.08909v1-3-e027b8ff59e74b51fa7f85b7
 
 ### Multi-Agent Answer
 
-REALM retrieves from an external textual knowledge corpus using a learned textual knowledge retriever integrated into its framework [E1]. This retriever enables REALM to explicitly query world knowledge during pre-training, rather than relying solely on knowledge stored implicitly in the model’s parameters [E2][E4]. By augmenting traditional language model pre-training algorithms with this retrieval component, REALM exposes and incorporates relevant external text fragments in a way that makes the use of world knowledge interpretable and modular within the model’s operation [E3][E5]. However, the provided evidence does not specify the particular external knowledge source or corpus that REALM retrieves from.
+REALM retrieves documents from a large knowledge corpus, such as Wikipedia [E2, E3]. The model can operate in a single-corpus setting where both the input and the knowledge source are Wikipedia, or in a separate-corpus setting where the knowledge source is Wikipedia but the input comes from a different source, such as CC-News [E5].
+
+The model decomposes the process of learning a distribution $p(y |x)$ into two distinct steps: retrieve, then predict [E1]. Specifically, the generative process involves retrieving potentially helpful documents $z$ from a knowledge corpus $Z$ (modeled as $p(z |x)$) and then conditioning on both the retrieved $z$ and the input $x$ to generate an output $y$ (modeled as $p(y |z, x)$) [E1].
+
+To perform this, the model uses a learned textual knowledge retriever [E2]. The retriever utilizes a dense inner product model where the relevance score $f(x, z)$ is the inner product of $d$-dimensional vector embeddings [E1].
 
 ### Metrics
 
-- baseline_latency_seconds: 3.665
-- orchestrator_latency_seconds: 41.556
-- baseline_total_tokens: 956
-- orchestrator_total_tokens: 14264
+- baseline_latency_seconds: 6.543
+- orchestrator_latency_seconds: 55.596
+- baseline_total_tokens: 5461
+- orchestrator_total_tokens: 35408
 - baseline_citation_count: 5
-- orchestrator_evidence_count: 20
-- fact_check_status_counts: {'supported': 3, 'unsupported': 1}
+- orchestrator_evidence_count: 6
+- fact_check_status_counts: {'unsupported': 2, 'supported': 5}
 
 ## Question 2
 
@@ -50,24 +60,29 @@ Which downstream tasks or benchmarks does the paper use to evaluate REALM?
 
 ### Baseline Answer
 
-The provided context does not specify which downstream tasks or benchmarks the paper uses to evaluate REALM. It only discusses reporting metrics like how often the gold answer appears in the top-5 retrievals before fine-tuning, which helps isolate the contribution of improving the retriever during pre-training [1][2][3][4][5].
+The paper uses the NaturalQuestions-Open benchmark to present results after ablating critical components of REALM [1].
 
-Citations:  
-[1][2][3][4][5] data/2002.08909v1.pdf, chunks 2505.0 to 2519.0
+Citations:
+[1] source: data/2002.08909v1.pdf, chunk_id: 2002.08909v1-12-69a8bcd84db848ef23c1fa05, chunk_index: 12
 
 ### Multi-Agent Answer
 
-The paper evaluates REALM using both end-to-end results and by measuring how often the gold answer appears in the top-5 retrievals before any fine-tuning [E1][E2]. This metric of gold answer frequency in the top-5 retrievals is particularly emphasized because it more significantly isolates the contribution of improving the retriever during pre-training [E1][E3]. However, the provided evidence notes do not specify particular downstream tasks or named benchmarks used for evaluation beyond these retrieval and end-to-end result measurements [E1][E2][E3][E4][E5].
+REALM is evaluated using three Open-domain Question Answering (Open-QA) benchmarks [E4]. The paper reports state-of-the-art results on these specific benchmarks: Natural Questions-Open (NQ), Web Questions (WQ), and Curated TREC (CT) [E4].
+
+The exact match scores achieved by REALM on these benchmarks are as follows:
+* **Natural Questions-Open (NQ):** REALM achieved scores of 39.2 using Wikipedia and 40.4 using CC-News [E5].
+* **Web Questions (WQ):** REALM achieved scores of 40.2 using Wikipedia and 40.7 using CC-News [E5].
+* **Curated TREC (CT):** REALM achieved scores of 46.8 using Wikipedia and 42.9 using CC-News [E5].
 
 ### Metrics
 
-- baseline_latency_seconds: 2.082
-- orchestrator_latency_seconds: 45.544
-- baseline_total_tokens: 899
-- orchestrator_total_tokens: 13131
+- baseline_latency_seconds: 3.362
+- orchestrator_latency_seconds: 56.690
+- baseline_total_tokens: 4204
+- orchestrator_total_tokens: 36733
 - baseline_citation_count: 5
-- orchestrator_evidence_count: 9
-- fact_check_status_counts: {'supported': 3}
+- orchestrator_evidence_count: 10
+- fact_check_status_counts: {'supported': 5}
 
 ## Question 3
 
@@ -77,24 +92,36 @@ What is REALM, and what does the paper mean by retrieval-augmented language mode
 
 ### Baseline Answer
 
-REALM, or Retrieval-Augmented Language Model pre-training, is a framework that enhances language model pre-training algorithms by incorporating a learned textual knowledge retriever. This approach differs from traditional models that store knowledge solely within their parameters. Instead, REALM explicitly reveals the function of world knowledge by requiring the model to access external knowledge via retrieval during the pre-training process, rather than relying exclusively on internal parameter storage [1][2][3][4][5].
+REALM stands for Retrieval-Augmented Language Model pre-training [1]. It is a novel framework designed to capture knowledge in a more modular and interpretable way by augmenting language model pre-training algorithms with a learned textual knowledge retriever [1, 2]. Unlike traditional models that store knowledge implicitly within their parameters, REALM explicitly exposes the role of world knowledge by requiring the model to decide what knowledge to retrieve and use during inference [1, 2].
+
+The paper defines "retrieval-augmented language model pre-training" as a process that includes the following characteristics:
+*   **Mechanism:** The framework augments pre-training with a latent knowledge retriever that retrieves documents from a large corpus (such as Wikipedia) and then attends over those documents to inform its predictions [1, 2]. 
+*   **Generative Process:** The process is modeled as a "retrieve-then-predict" generative process [3]. For pre-training, the specific task is masked language modeling, where the model must predict missing tokens ($y$) from a sentence ($x$) by first retrieving helpful documents ($z$) from a knowledge corpus ($Z$) [3].
+*   **Learning Signal:** The retriever is trained in an unsupervised manner using a performance-based signal from text; specifically, a retrieval that improves the language model's perplexity is rewarded, while uninformative retrieval is penalized [1]. This is achieved by modeling the approach as a latent variable language model and optimizing the marginal likelihood [1].
+*   **Scale:** The pre-training involves backpropagating through a retrieval step that must consider millions of candidate documents for each step [1, 2].
 
 Citations:
-[1][2][3][4][5] data/2002.08909v1.pdf chunks 73.0, 82.0, 87.0, 88.0, 92.0
+[1] source: data/2002.08909v1.pdf, chunk_id: 2002.08909v1-1-4db590f52f9234a64d454952
+[2] source: data/2002.08909v1.pdf, chunk_id: 2002.08909v1-0-7d4268087c32fc1b944606b2
+[3] source: data/2002.08909v1.pdf, chunk_id: 2002.0
 
 ### Multi-Agent Answer
 
-REALM (Retrieval-Augmented Language Model) is a language model pre-training framework that enhances traditional language model pre-training algorithms by incorporating a learned textual knowledge retriever [E18][E19]. Unlike conventional models that store all knowledge implicitly within their parameters, REALM explicitly exposes the role of world knowledge by retrieving relevant external textual information during pre-training [E20][E6]. This retrieval-augmented approach allows the model to directly access and use external knowledge sources rather than relying solely on parameter memorization [E7].
+REALM (Retrieval-Augmented Language Model) is a framework that augments language model pre-training with a latent knowledge retriever [E1]. This approach is designed to capture knowledge in a more modular and interpretable way than traditional language model pre-training, which stores world knowledge implicitly in the parameters of a neural network [E1].
+
+The term "retrieval-augmented language model pre-training" refers to extending the retrieval-based approach to the pre-training stage of language models [E5]. This process decomposes the probability of an output $p(y|x)$ into a "retrieve, then predict" process [E5]. This involves two components: a neural knowledge retriever and a knowledge-augmented encoder [E5]. Specifically, the model treats the retrieved document $z$ as a latent variable to model the likelihood of generating an output $y$ given an input $x$ [E5].
+
+During pre-training, REALM utilizes masked language modeling as the learning signal to perform unsupervised pre-training of the knowledge retriever [E1]. The retriever allows the model to retrieve and attend over documents from a large corpus, such as Wikipedia, during pre-training, fine-tuning, and inference [E1].
 
 ### Metrics
 
-- baseline_latency_seconds: 2.197
-- orchestrator_latency_seconds: 23.049
-- baseline_total_tokens: 925
-- orchestrator_total_tokens: 7517
+- baseline_latency_seconds: 7.935
+- orchestrator_latency_seconds: 62.596
+- baseline_total_tokens: 5743
+- orchestrator_total_tokens: 39060
 - baseline_citation_count: 5
-- orchestrator_evidence_count: 20
-- fact_check_status_counts: {'supported': 3}
+- orchestrator_evidence_count: 11
+- fact_check_status_counts: {'supported': 7}
 
 ## Question 4
 
@@ -104,24 +131,40 @@ How does REALM differ from a standard parametric language model such as BERT in 
 
 ### Baseline Answer
 
-REALM differs from a standard parametric language model such as BERT in where knowledge is stored and accessed by augmenting language model pre-training with a learned textual knowledge retriever. Unlike models that store knowledge solely in their parameters, REALM explicitly exposes the role of world knowledge by retrieving relevant textual information during the inference process rather than relying only on what is encoded in the model parameters themselves [1][2][3][4][5].
+Standard parametric language models, such as BERT, store learned world knowledge implicitly within the parameters of the underlying neural network [1]. This implicit storage makes it difficult to determine what knowledge is stored in the network or where it is located, and it limits storage space to the size of the network, necessitating larger networks to capture more facts [1].
 
-Citations:  
-[1][2][3][4][5] data/2002.08909v1.pdf (chunks 108.0, 113.0, 114.0, 122.0, 123.0)
+In contrast, REALM (Retrieval-Augmented Language Model) differs in the following ways:
+
+*   **Storage:** Instead of relying solely on parameters, REALM uses a learned textual knowledge retriever to access a large textual knowledge corpus, such as Wikipedia [1, 2]. 
+*   **Access:** Before making a prediction, the model uses the retriever to retrieve documents from the corpus and then attends over those documents to inform its prediction [2].
+*   **Nature of Knowledge:** REALM's approach captures knowledge in a more modular and interpretable way [1]. Its memories are "grounded," meaning each memory is associated with a specific document rather than unnamed value vectors [3].
+
+Citations:
+[1] source: data/2002.08909v1.pdf, chunk_id: 2002.08909v1-0-7d4268087c32fc1b944606b2
+[2] source: data/2002.08909v1.pdf, chunk_id: 2002.08909v1-1-4db590f52f9234a64d454952
+[3] source: data/2002.08909v1.pdf, chunk_id: 2002.08909v1-15-e73576ceacc6e97a0666fd10
 
 ### Multi-Agent Answer
 
-REALM differs from a standard parametric language model such as BERT primarily in where and how knowledge is stored and accessed. Unlike models that store knowledge implicitly within their parameters, REALM augments language model pre-training with a learned textual knowledge retriever that explicitly accesses an external corpus of documents rather than relying solely on internal parameterized knowledge [E3][E4][E5]. This retrieval mechanism enables REALM to condition its predictions on relevant retrieved textual evidence, explicitly exposing the role of world knowledge, whereas standard models like BERT encode knowledge only within their model weights [E3][E4]. Furthermore, REALM improves masked token prediction by grounding predictions in retrieved documents, as illustrated by its substantially higher probability assigned to correct masked words when conditioned on retrieved evidence compared to BERT’s predictions without retrieval [E2].
+REALM differs from standard parametric language models, such as BERT, in the following ways regarding how knowledge is stored and accessed:
+
+**Knowledge Storage**
+While standard models store knowledge within their parameters [E1], REALM's memories are "grounded," meaning each memory is associated with a specific document rather than being stored as unnamed value vectors [E6].
+
+**Knowledge Access**
+Unlike models that rely on stored parameters, REALM explicitly exposes the role of world knowledge by requiring the model to decide what to retrieve and use during inference [E1]. Before making each prediction, the language model uses a learned textual knowledge retriever to retrieve documents from a large corpus, such as Wikipedia, and then attends over those documents to inform its prediction [E1].
+
+This retrieval-based approach allows REALM to assign higher probabilities to correct terms compared to BERT [E8]. For example, in a case involving the term "Fermat," BERT assigned a probability of $1.1 \times 10^{-14}$ without retrieval, whereas REALM achieved a marginal probability of $0.129$ by marginalizing over the top 8 retrieved documents [E8].
 
 ### Metrics
 
-- baseline_latency_seconds: 2.350
-- orchestrator_latency_seconds: 64.213
-- baseline_total_tokens: 894
-- orchestrator_total_tokens: 24200
+- baseline_latency_seconds: 6.246
+- orchestrator_latency_seconds: 35.289
+- baseline_total_tokens: 6552
+- orchestrator_total_tokens: 21133
 - baseline_citation_count: 5
-- orchestrator_evidence_count: 29
-- fact_check_status_counts: {'unsupported': 2, 'supported': 5}
+- orchestrator_evidence_count: 14
+- fact_check_status_counts: {'supported': 5}
 
 ## Question 5
 
@@ -131,38 +174,36 @@ How does REALM's retrieve-then-predict framework work, including the role of the
 
 ### Baseline Answer
 
-REALM's retrieve-then-predict framework works by framing the prediction task as a two-step generative process involving a latent document variable \( z \). Given an input \( x \) (such as a question or a masked sentence), the model first retrieves relevant documents \( z \) from a large knowledge corpus \( Z \) by sampling from the distribution \( p(z|x) \). This retrieval step is modeled by a neural knowledge retriever that scores the relevance of each document to the input via dense vector embeddings and computes a softmax over all scores to define \( p(z|x) \). Subsequently, the model conditions on both the input \( x \) and the retrieved document \( z \) to generate the output \( y \), modeled by \( p(y|z, x) \).
+REALM's retrieve-then-predict framework decomposes the probability of an output $y$ given an input $x$, denoted as $p(y|x)$, into two sequential steps:
 
-The latent variable \( z \) (the retrieved document) is marginally integrated out to obtain the overall output likelihood:
-\[
-p(y|x) = \sum_{z \in Z} p(y|z, x) \, p(z|x).
-\]
+1.  **Retrieve:** The model first retrieves potentially helpful documents $z$ from a knowledge corpus $Z$ [3]. This step is modeled as a sample from the distribution $p(z|x)$ [3].
+2.  **Predict:** The model then conditions on both the original input $x$ and the retrieved document $z$ to generate the output $y$, modeled as $p(y|z, x)$ [3].
 
-This means the model does not commit to a single document but rather considers all documents weighted by their relevance for predicting \( y \) [1].
+The latent document variable $z$ is used to obtain the overall likelihood of generating $y$ by treating it as a latent variable and marginalizing over all possible documents in the corpus $Z$ [3]. This is expressed mathematically as:
+$p(y|x) = \sum_{z \in Z} p(y|z, x)p(z|x)$ [3].
 
-The retriever and the knowledge-augmented encoder (which generates \( y \)) are jointly trained by maximizing the log-likelihood of the observed data using this generative model. The retriever learns to assign higher relevance scores to documents \( z \) that lead to better prediction accuracy, as indicated by the gradient:
-\[
-\nabla \log p(y|x) = \sum_{z} \left[ \frac{p(y|z,x)}{p(y|x)} - 1 \right] p(z|x) \nabla f(x,z),
-\]
-where \( f(x,z) \) is the relevance score function for document \( z \) given \( x \) [2][5]. This equation shows that documents that improve the probability of correct prediction \( p(y|z,x) \) over the expected prediction \( p(y|x) \) receive a positive update in the retriever's parameters, encouraging more effective retrieval.
+In practice, the framework uses a neural knowledge retriever to model $p(z|x)$ and a knowledge-augmented encoder to model $p(y|z, x)$ [3].
 
-In practice, the retriever uses embedding functions implemented with BERT-style Transformers for both the input and document texts. The embeddings are combined using inner product similarity to score relevance [1].
-
-The role of the latent document variable \( z \) is crucial: it allows the model to integrate information from a large external knowledge corpus dynamically,
+Citations:
+[3] source: data/2002.08909v1.pdf, chunk_id: 2002.08909v1-3-e027b8ff59e74b51fa7f85b7, chunk_index: 3
 
 ### Multi-Agent Answer
 
-REALM (Retrieval-Augmented Language Model) employs a retrieve-then-predict framework that augments traditional language model pre-training by integrating a learned textual knowledge retriever [E1]. Unlike models that encode knowledge solely within their parameters, REALM explicitly accesses world knowledge through retrieval, making the knowledge contribution more transparent [E2]. This approach enables the model to dynamically access relevant external information before making predictions rather than relying exclusively on stored parameter knowledge [E2]. Regarding the role of the latent document variable \( z \), the provided evidence does not include explicit information about \( z \) representing retrieved documents or how the language model conditions its predictions on this variable. Therefore, details about \( z \) and its exact role in REALM’s framework are not available from the supplied sources.
+REALM (Retrieval-Augmented Language Model) is a framework that augments language model pre-training with a learned textual knowledge retriever [E1, E2]. The framework decomposes the process of generating an output $y$ given an input $x$ into two steps: first, it retrieves potentially helpful documents $z$ from a knowledge corpus $Z$ (modeled as $p(z | x)$), and second, it conditions on both the original input $x$ and the retrieved document $z$ to generate the output $y$ (modeled as $p(y | z, x)$) [E3].
+
+In this approach, $z$ is treated as a latent variable [E3]. The overall likelihood of generating the output $y$ is obtained by treating $z$ as a latent variable and marginalizing over all possible documents $z$ in the corpus $Z$, expressed as $p(y | x) = \sum_{z \in Z} p(y | z, x) p(z | x)$ [E3].
+
+During inference, the language model uses the retriever to retrieve documents from a large corpus, such as Wikipedia, and then attends over those documents to help inform its prediction [E1, E2]. The retriever is trained using a performance-based signal from unsupervised text, which rewards retrievals that improve the language model's perplexity and penalizes uninformative retrievals [E1].
 
 ### Metrics
 
-- baseline_latency_seconds: 4.848
-- orchestrator_latency_seconds: 42.192
-- baseline_total_tokens: 5574
-- orchestrator_total_tokens: 14664
+- baseline_latency_seconds: 5.288
+- orchestrator_latency_seconds: 60.457
+- baseline_total_tokens: 5464
+- orchestrator_total_tokens: 36390
 - baseline_citation_count: 5
-- orchestrator_evidence_count: 23
-- fact_check_status_counts: {'supported': 3, 'unsupported': 2}
+- orchestrator_evidence_count: 8
+- fact_check_status_counts: {'unsupported': 2, 'supported': 4}
 
 ## Question 6
 
@@ -172,34 +213,30 @@ How does the paper train the retriever when the retrieved document is latent, an
 
 ### Baseline Answer
 
-The paper trains the retriever, even when the retrieved document is latent, by directly incorporating the retrieval process into the training objective such that the retriever learns to assign higher scores to documents that improve prediction accuracy. Specifically, for a query \( x \) and a document \( z \), the model defines a relevance score \( f(x, z) \) assigned by the retriever. During training, the gradient updates for the retriever's parameters \( \theta \) are weighted by a term \( r(z) \), which is positive when the likelihood of the correct output \( y \) given \( x \) and \( z \), \( p(y|z, x) \), exceeds the expected likelihood \( p(y|x) \) over all documents. This effectively encourages the retriever to increase scores for documents that help improve prediction (those whose use raises \( p(y|z, x) \)) and decrease scores for less helpful documents. Thus, the learning signal flows back to retrieval through the gradient of the log-probability of the target conditioned on the retrieved documents, reinforcing retrieval of documents that contribute positively to the prediction task [3].
+The paper trains the retriever by modeling the "retrieve-then-predict" approach as a latent variable language model and optimizing the marginal likelihood [1]. To obtain the overall likelihood of generating an output $y$ from an input $x$, the model treats the retrieved document $z$ as a latent variable and marginalizes over all possible documents $z$ in the corpus $Z$, using the formula $p(y |x) = \sum_{z \in Z} p(y |z, x) p(z |x)$ [4].
 
-Additionally, several strategies are used to inject inductive biases during pre-training to guide the retriever towards meaningful retrievals, such as salient span masking to focus training on tokens requiring world knowledge, and adding a null document to model when no retrieval is necessary. These methods help ensure the retriever learns beyond trivial lexical matching and retrieves documents that genuinely aid in the task [3].
+The learning signal flows back to the retrieval module through backpropagation from the language modeling objective [2]. Specifically, the retriever is trained using a performance-based signal from unsupervised text: a retrieval that improves the language model’s perplexity is rewarded, while an uninformative retrieval is penalized [1]. During pre-training, the model uses masked language modeling as the learning signal [2].
 
-Citations of these gradients and the mechanism by which learning flows back are detailed primarily in chunk 3 [3], while other chunks mention the overall approach and strategies for improving retrieval but do not give additional details on the actual training and signal flow.
-
-### Summary
-- The retriever is trained with a gradient that increases the retrieval score \( f(x,z) \) if that document \( z \) improves the prediction \( p(y|z,x) \) above the expected.
-- The gradient update for the retriever parameters includes a term \( r(z) = [p(y|z,x)/p(y|x) - 1] p(z|x) \), guiding the retriever towards useful documents.
-- Learning signals flow back from the prediction loss through this gradient to update the retriever.
-- Inductive biases like salient span masking and a null document improve retrieval quality.
-
-### Citations
-[3] from data/2002.08909v1.pdf, chunk_id: 200
+Citations:
+[1] source: data/2002.08909v1.pdf, chunk_id: 2002.08909v1-1-4db590f52f9234a64d454952, chunk_index: 1
+[2] source: data/2002.08909v1.pdf, chunk_id: 2002.08909v1-0-7d4268087c32fc1b944606b2, chunk_index: 0
+[4] source: data/2002.08909v1.pdf, chunk_id: 2002.08909v1-3-e027b8ff59e74b51fa7f85b7, chunk_index: 3
 
 ### Multi-Agent Answer
 
-The paper mentions improving the retriever during pre-training, as indicated by repeated references to this concept across multiple sources [E1][E2][E3][E5]. However, these mentions are brief and do not include detailed explanations or concrete mechanisms for how the retriever is trained when the retrieved document is latent [E2][E4]. Additionally, the pathway or method by which the learning signal flows back to the retrieval component is not described in the provided evidence [E1][E3]. Therefore, there is insufficient information in the supplied notes to explain how retrieval training occurs with latent documents or how gradient or learning signals are propagated back to the retriever.
+The REALM framework models the "retrieve-then-predict" approach as a latent variable language model, which is optimized by maximizing marginal likelihood [E1]. The retriever is trained using a performance-based signal derived from unsupervised text [E1]. Specifically, the model rewards retrievals that improve the language model's perplexity and penalizes uninformative retrievals [E1]. This training can be implemented in an unsupervised manner by using masked language modeling as the learning signal [E2].
+
+To learn the model end-to-end, the system backpropagates through a retrieval step that considers an entire corpus of textual knowledge [E1]. This retrieval step can consider millions of documents [E2]. One challenge in this process is the "cold-start problem," where poor initial embeddings for the input and document can lead the encoder to ignore retrieved documents, resulting in a lack of meaningful gradient to improve the retriever [E4].
 
 ### Metrics
 
-- baseline_latency_seconds: 5.031
-- orchestrator_latency_seconds: 35.823
-- baseline_total_tokens: 2336
-- orchestrator_total_tokens: 8780
+- baseline_latency_seconds: 5.422
+- orchestrator_latency_seconds: 29.581
+- baseline_total_tokens: 5397
+- orchestrator_total_tokens: 20981
 - baseline_citation_count: 5
-- orchestrator_evidence_count: 26
-- fact_check_status_counts: {'supported': 3, 'unsupported': 1}
+- orchestrator_evidence_count: 10
+- fact_check_status_counts: {'supported': 8}
 
 ## Question 7
 
@@ -209,37 +246,39 @@ What approximations or engineering choices does REALM use to make retrieval over
 
 ### Baseline Answer
 
-REALM employs several approximations and engineering choices to make retrieval over a large corpus practical during both training and inference:
+To make retrieval over a large corpus practical during training and inference, REALM uses the following engineering choices and approximations:
 
-1. **Caching and Asynchronous Updates**: The computation performed for each document in the retriever is cached and asynchronously updated. This reduces the need to recompute embeddings for every training step, making the retrieval process more efficient [2].
-
-2. **Maximum Inner Product Search (MIPS)**: The selection of documents is formulated as a Maximum Inner Product Search problem, allowing efficient retrieval in large embedding spaces through approximate nearest neighbor methods. This enables scalable retrieval from millions of candidate documents [2].
-
-3. **Limiting Number of Retrieved Documents**: Instead of retrieving a large number of documents (20 to 80) as in other retrieval-based systems, REALM retrieves only 5 candidate documents for each example during training and inference. This reduces computational cost while maintaining strong performance [1].
-
-4. **Batching and TPU Parallelization**: REALM pre-trains on 64 Google Cloud TPUs with a batch size of 512, and the document embedding step for the MIPS index is parallelized over 16 TPUs. This distributed setup helps handle large-scale retrieval computations [1].
-
-5. **Marginalization over Candidates**: For each example, REALM retrieves and marginalizes over a small set (8 candidate documents including a null document), effectively handling the latent variable structure and improving training efficiency [1].
-
-These engineering and approximative solutions enable REALM to incorporate a learned retriever over a large corpus during language model pre-training and downstream tasks without prohibitive computational cost.
+*   **Retriever Structure and MIPS:** The retriever is structured so that computations for each document can be cached and updated asynchronously [2]. Additionally, the selection of the best documents is formulated as a Maximum Inner Product Search (MIPS) [2].
+*   **Parallelization and Indexing:** During pre-training, the document embedding step for the MIPS index is parallelized over 16 TPUs [4]. To maintain the index, a parallel process runs to re-embed corpus documents and rebuild the MIPS index, resulting in an index refresh approximately every 500 training steps [5].
+*   **Candidate Selection (Marginalization and Top-K):** 
+    *   **During Pre-training:** For each example, the model retrieves and marginalizes over 8 candidate documents, which includes a null document $\emptyset$ [4].
+    *   **During Fine-tuning Inference:** The system considers only the top-5 candidate documents [1, 4].
 
 Citations:
-[1] data/2002.08909v1.pdf chunk_id: 2002.08909v1-2389-a50ccbbc17d083fe46db9f43 (Page 7)  
-[2] data/2002.08909v1.pdf chunk_id: 2002.08909v1-401-17a6d5459277780bc451e2d1 (Page 2)
+[1] source: data/2002.08909v1.pdf, chunk_id: 2002.08909v1-12-69a8bcd84db848ef23c1fa05, chunk_index: 12
+[2] source: data/2002.08909v1.pdf, chunk_id: 2002.08909v1-1-4db590f52f9234a64d454952, chunk_index: 1
+[4] source: data/2002.08909v1.pdf, chunk_id: 2002.08909v1-11-3fa55fc3148d1188cb70ab91, chunk_index: 11
+[5] source: data/2002.08909v1.pdf, chunk_id: 2002.08909v1-13-8b5179bb43546a69e3
 
 ### Multi-Agent Answer
 
-The provided evidence notes establish that REALM augments language model pre-training with a learned textual knowledge retriever, explicitly exposing the role of world knowledge rather than storing it implicitly in model parameters [E2][E3][E4]. Additionally, REALM’s evaluation reports how often the gold answer appears in the top-5 retrieved documents prior to any fine-tuning, a metric that helps isolate retriever improvements during pre-training [E1][E5]. However, the notes do not describe any specific approximations or engineering choices that REALM uses to make retrieval over a large corpus practical during training and inference. Therefore, details about such practical scaling strategies are missing from the provided evidence [E1][E2][E3][E4][E5].
+To make retrieval over a large corpus practical, REALM employs several engineering choices and approximations:
+
+*   **Maximum Inner Product Search (MIPS):** To handle the computational challenge of evaluating millions of candidate documents, the retriever formulates document selection as a Maximum Inner Product Search [E1].
+*   **Caching and Asynchronous Updates:** The retriever is structured such that the computation for each document can be cached and updated asynchronously [E1].
+*   **Dense Vector Embeddings:** The knowledge retriever uses a dense inner product model, where relevance is defined by the inner product of $d$-dimensional vector embeddings [E6].
+*   **Inference Constraints:** During fine-tuning inference, the model limits its consideration to the top-5 candidate documents [E3].
+*   **Parallelization:** The document embedding step is parallelized over 16 TPUs to improve efficiency [E3].
 
 ### Metrics
 
-- baseline_latency_seconds: 4.840
-- orchestrator_latency_seconds: 44.288
-- baseline_total_tokens: 3434
-- orchestrator_total_tokens: 13776
+- baseline_latency_seconds: 6.869
+- orchestrator_latency_seconds: 30.732
+- baseline_total_tokens: 5668
+- orchestrator_total_tokens: 21090
 - baseline_citation_count: 5
-- orchestrator_evidence_count: 21
-- fact_check_status_counts: {'unsupported': 2, 'supported': 2}
+- orchestrator_evidence_count: 6
+- fact_check_status_counts: {'supported': 5}
 
 ## Question 8
 
@@ -249,28 +288,37 @@ How does REALM compare with ORQA or other open-domain QA baselines, and what evi
 
 ### Baseline Answer
 
-The provided context does not contain explicit comparative information about how REALM performs relative to ORQA or other open-domain QA baselines. While there is mention of results for NaturalQuestions-Open and ablation studies on critical components of REALM, no direct comparison or evidence against ORQA or other baselines is provided in the given excerpts.
+REALM compares to ORQA and other open-domain QA baselines in the following ways:
 
-Citations:  
-No relevant comparison details found in the supplied context.
+*   **Comparison with ORQA:** ORQA is considered the most direct comparison to REALM because the fine-tuning setup, hyperparameters, and training data are identical [1]. The improvement demonstrated by REALM over ORQA is attributed entirely to superior pre-training methods [1]. Furthermore, resetting both the retriever and encoder parameters to their baseline state reduces the REALM system to its main baseline, ORQA [5]. Both REALM and ORQA initialize their retrievers using the Inverse Cloze Task [2].
+*   **Comparison with Retrieval-based Systems:** Compared to other retrieval-based systems (such as Asai et al., 2019; Min et al., 2019a;b), which typically retrieve between 20 to 80 documents, REALM achieves the overall best performance while only retrieving 5 documents [1].
+*   **Comparison with Generation-based Systems:** REALM compares against state-of-the-art systems from the generation-based paradigm [4]. Specifically, it is compared against concurrent work that fine-tunes T5 for Open-QA, utilizing Base, Large, and 11-billion parameter models to measure the effects of model size [2].
+*   **Comparison with BERT:** In terms of masked language model prediction, REALM assigns a much higher probability to correct terms than BERT does [5]. For example, when predicting the word "Fermat," BERT assigned a probability of $1.1 \times 10^{-14}$ (without retrieval), whereas REALM's marginalized probability was $0.129$ [5].
+
+Citations:
+[1] source: data/2002.08909v1.pdf, chunk_id: 2002.08909v1-12-69a8bcd84db848ef23c1fa05
+[2] source: data/2002.08909v1.pdf, chunk_id: 2002.08909v1-10-8ea61faa3a17c1fc8f8725d8
+[4] source: data/2002.08909v1.pdf, chunk_
 
 ### Multi-Agent Answer
 
-REALM distinguishes itself from ORQA and other open-domain QA baselines primarily through its novel language model pre-training approach that uses retrieved documents to improve masked language model predictions [E1]. Unlike standard methods, REALM backpropagates gradients into the Maximum Inner Product Search (MIPS) retrieval index, enabling end-to-end differentiable training and joint optimization of both the retriever and encoder components [E1]. This joint training and frequent refreshing of the MIPS index during pre-training are key to REALM’s improved performance [E1]. 
+ORQA is considered the most direct comparison to REALM because the fine-tuning setup, hyperparameters, and training data are identical [E1]. Additionally, the retrievers for both REALM pretraining and ORQA are initialized using the Inverse Cloze Task [E2]. The improvement of REALM over ORQA is attributed purely to better pre-training methods [E1].
 
-While REALM’s differentiable retriever and joint optimization contrast with heuristic retrieval methods that rely on fixed, non-learned sparse bag-of-words retrieval techniques, the evidence only partially supports the claim that this differentiability is a definitive difference from ORQA, as explicit details about ORQA’s retrieval training and fixed index are not provided in the available evidence [E1]. 
+Compared to other retrieval-based systems, REALM achieves the overall best performance despite retrieving fewer documents [E1]. Specifically, REALM achieves its best performance by retrieving only 5 documents, whereas other retrieval-based systems typically retrieve between 20 and 80 documents [E1].
 
-REALM’s effectiveness has been empirically evaluated on open-domain QA benchmarks such as NaturalQuestions-Open, WebQuestions, and CuratedTrec, and results including ablation studies that measure the frequency of gold answers appearing in top retrievals before fine-tuning further illustrate the impact of its joint retriever pre-training [E2][E3][E4][E5]. However, the evidence does not provide direct quantitative comparison results between REALM and ORQA or other baselines, so precise comparative performance claims cannot be verified here.
+The study also references the following baselines:
+* **T5:** A fine-tuned T5 model is used as a generation-based baseline to measure the effects of model size [E2].
+* **GPT-2:** While GPT-2 hinted at the possibility of generating answers without context, its performance was not competitive, which may be due to a lack of fine-tuning [E2].
 
 ### Metrics
 
-- baseline_latency_seconds: 3.188
-- orchestrator_latency_seconds: 58.042
-- baseline_total_tokens: 938
-- orchestrator_total_tokens: 24089
+- baseline_latency_seconds: 7.127
+- orchestrator_latency_seconds: 31.702
+- baseline_total_tokens: 5305
+- orchestrator_total_tokens: 18629
 - baseline_citation_count: 5
-- orchestrator_evidence_count: 21
-- fact_check_status_counts: {'supported': 5, 'unsupported': 1}
+- orchestrator_evidence_count: 7
+- fact_check_status_counts: {'supported': 9}
 
 ## Question 9
 
@@ -280,24 +328,36 @@ How does REALM's retrieval-based approach compare with storing knowledge only in
 
 ### Baseline Answer
 
-REALM's retrieval-based approach differs from storing knowledge only in model parameters by explicitly exposing the role of world knowledge. Instead of embedding all knowledge implicitly within the model's parameters, REALM augments language model pre-training with a learned textual knowledge retriever. This allows for a more interpretable and modular way of managing knowledge, as the model can directly access external knowledge rather than having to encode everything internally within the parameters [1][2][3][4][5].
+REALM's retrieval-based approach differs from models that store knowledge only in their parameters in several ways:
 
-Citations:  
-[1][2][3][4][5] - data/2002.08909v1.pdf
+*   **Interpretability and Modularity:** Unlike models that store knowledge implicitly in parameters, making it difficult to determine what knowledge is stored and where, REALM's approach captures knowledge in a more interpretable and modular way [1, 3]. Specifically, its memories are "grounded," meaning each memory is associated with a specific document rather than unnamed value vectors, which provides provenance for predicted answers [5].
+*   **Explicit Role of Knowledge:** This approach explicitly exposes the role of world knowledge by requiring the model to decide what knowledge to retrieve and use during inference [1].
+*   **Storage Capacity:** In models where knowledge is stored implicitly in parameters, the storage space is limited by the size of the network; capturing more knowledge requires training ever-larger networks, which can be expensive or prohibitively slow [3].
+
+Citations:
+[1] source: data/2002.08909v1.pdf, chunk_id: 2002.08909v1-1-4db590f52f9234a64d454952
+[3] source: data/2002.08909v1.pdf, chunk_id: 2002.08909v1-0-7d4268087c32fc1b944606b2
+[5] source: data/2002.08909v1.pdf, chunk_id: 2002.08909v1-15-e73576ceacc6e97a0666fd10
 
 ### Multi-Agent Answer
 
-REALM’s retrieval-based approach fundamentally differs from models that store knowledge solely within their parameters [E1]. Instead of embedding all knowledge implicitly in the model weights, REALM explicitly exposes the role of world knowledge by asking the model to retrieve relevant information from an external source rather than relying solely on learned parameters [E2]. This contrasts with models that rely only on parameter-stored knowledge, as REALM requires the model to actively access and utilize information, making the use of external knowledge explicit rather than implicit [E3]. Thus, REALM’s method explicitly exposes the role of world knowledge instead of concealing it inside the model parameters [E4].
+In contrast to models that store world knowledge implicitly within neural network parameters, REALM's retrieval-based approach explicitly exposes the role of world knowledge [E2]. While implicit storage in parameters requires ever-larger networks to cover more facts, REALM augments pre-training with a latent textual knowledge retriever to capture knowledge in a more modular and interpretable way [E6].
+
+### Interpretability and Modularity
+REALM provides qualitative benefits such as interpretability and modularity [E2]. Because its memories are "grounded"—meaning each memory is associated with a specific document rather than unnamed value vectors—it provides a level of interpretability that allows users to find provenance for predicted answers [E4].
+
+### Knowledge Capture
+Standard language model pre-training captures knowledge implicitly in parameters [E6]. REALM, however, uses a "retrieve, then predict" approach where the model decides what knowledge to retrieve and use during inference [E2][E3].
 
 ### Metrics
 
-- baseline_latency_seconds: 2.290
-- orchestrator_latency_seconds: 35.987
-- baseline_total_tokens: 933
-- orchestrator_total_tokens: 10019
+- baseline_latency_seconds: 5.472
+- orchestrator_latency_seconds: 28.991
+- baseline_total_tokens: 5463
+- orchestrator_total_tokens: 20054
 - baseline_citation_count: 5
-- orchestrator_evidence_count: 24
-- fact_check_status_counts: {'supported': 4}
+- orchestrator_evidence_count: 8
+- fact_check_status_counts: {'supported': 8}
 
 ## Question 10
 
@@ -307,24 +367,31 @@ What ablation or diagnostic evidence shows that retrieval pre-training improves 
 
 ### Baseline Answer
 
-The ablation or diagnostic evidence that shows retrieval pre-training improves REALM, rather than only the reader component, is reported in terms of how often the gold answer appears in the top-5 retrievals before applying any fine-tuning. This metric isolates the contribution of improving the retriever during pre-training, allowing the authors to separate the effects of retrieval improvements from those of the reader component [1][2][4][5]. Therefore, measuring gold answer presence in top retrievals before fine-tuning acts as diagnostic evidence that retrieval pre-training specifically benefits the retriever in REALM.
+To determine whether REALM pre-training improves the retriever, the encoder, or both, the researchers performed an ablation where they reset the parameters of either the retriever or the encoder to their baseline state before fine-tuning [4].
 
-Citations:  
-[1], [2], [4], [5] – data/2002.08909v1.pdf chunks 2495.0, 2496.0, 2497.0, and 2498.0
+The diagnostic and ablation evidence includes:
+* **Encoder and Retriever separately:** The researchers found that both the encoder and the retriever benefit from REALM training when they are improved separately [4].
+* **Combined improvement:** The best results are achieved when both components act in unison [4].
+* **Baseline comparison:** Resetting both the retriever and the encoder reduces the system to the main baseline, ORQA [4].
+* **Isolating retriever contribution:** To more significantly isolate the contribution of improving the retriever during pre-training, the researchers reported how often the gold answer appears in the top-5 retrievals before any fine-tuning is applied [1, 4].
+
+Citations:
+[1] source: data/2002.08909v1.pdf, chunk_id: 2002.08909v1-12-69a8bcd84db848ef23c1fa05, chunk_index: 12
+[4] source: data/2002.08909v1.pdf, chunk_id: 2002.08909v1-13-8b5179bb43546a69e37d136e, chunk_index: 13
 
 ### Multi-Agent Answer
 
-Ablation and diagnostic evidence showing that retrieval pre-training improves REALM beyond just the reader component is primarily based on measuring how often the gold answer appears among the top-5 retrieved documents before any fine-tuning is applied [E1]. This metric isolates the retriever’s contribution because it evaluates retrieval quality independently from the reader’s response accuracy [E1]. Multiple sources emphasize that reporting the frequency of the gold answer in the top-5 retrievals prior to fine-tuning is a more significant indicator of improvements in the retriever component due to pre-training [E3][E4][E5]. By comparing end-to-end results with this retrieval metric after ablating critical components, the study specifically assesses the effect of pre-training on the retriever rather than the reader [E1][E5]. Although the evidence notes do not provide specific numeric results, they consistently highlight that this retrieval-focused evaluation isolates the retriever’s role in improving REALM during pre-training [E1][E3].
+To isolate the contribution of improving the retriever during pre-training, the authors report how frequently the gold answer appears in the top-5 retrievals before any fine-tuning is applied [E7]. Regarding the individual components of the model, both the encoder and the retriever benefit separately from REALM training, though optimal results require both components to act in unison [E7]. Furthermore, the improvement of REALM over ORQA is attributed purely to better pre-training methods [E6].
 
 ### Metrics
 
-- baseline_latency_seconds: 2.556
-- orchestrator_latency_seconds: 43.193
-- baseline_total_tokens: 1808
-- orchestrator_total_tokens: 14650
+- baseline_latency_seconds: 5.094
+- orchestrator_latency_seconds: 31.625
+- baseline_total_tokens: 4584
+- orchestrator_total_tokens: 22113
 - baseline_citation_count: 5
-- orchestrator_evidence_count: 12
-- fact_check_status_counts: {'supported': 5}
+- orchestrator_evidence_count: 9
+- fact_check_status_counts: {'supported': 3}
 
 ## Question 11
 
@@ -334,32 +401,39 @@ Synthesize the evidence for why REALM improves open-domain QA performance, inclu
 
 ### Baseline Answer
 
-The evidence for why REALM improves open-domain QA performance can be synthesized from the results presented for the NaturalQuestions-Open dataset, focusing on retrieval quality, pre-training, and downstream fine-tuning:
+REALM improves open-domain question answering (Open-QA) performance through the following mechanisms:
 
-1. **Retrieval Quality Contribution by Pre-training**: REALM’s effectiveness is partly due to its improved retriever, which is built and refined during pre-training. Before any fine-tuning is applied, REALM’s retrieval component is evaluated by how often the gold answer appears in the top-5 retrievals. This metric directly isolates the contribution of the pre-trained retriever's quality, showing that better retrieval performance is a critical factor in the overall improved QA results.
+*   **Pre-training:** REALM augments language model pre-training with a learned textual knowledge retriever [4]. It uses a masked language modeling task as an unsupervised learning signal, where the model must predict missing tokens [2, 4]. The retriever is trained using a performance-based signal: retrieval that improves the language model's perplexity is rewarded, while uninformative retrieval is penalized [5]. This allows the retriever to be trained in an unsupervised manner by backpropagating through the retrieval step across millions of documents [4]. This pre-training method can be applied to both single-corpus and separate-corpus settings [1].
+*   **Retrieval Quality:** Unlike previous retrieval-based systems that often retrieve between 20 to 80 documents, REALM achieves the overall best performance while only retrieving 5 documents [1]. The improvement of REALM over similar systems like ORQA is attributed purely to its superior pre-training methods [1]. Additionally, the retriever is designed to transfer to other tasks because it retrieves raw text rather than labeled examples [5].
+*   **Downstream Fine-tuning:** REALM's architecture decomposes the prediction process into a "retrieve-then-predict" generative process [2]. During fine-tuning for Open-QA, the model takes a question as input and retrieves potentially helpful documents from a knowledge corpus to help inform the prediction of the answer [2, 5]. By fine-tuning on Open-QA benchmarks, REALM has outperformed previous state-of-the-art methods by a margin of 4-16% in absolute accuracy [4, 5].
 
-2. **Ablation of Critical Components**: By conducting ablation studies on key components of REALM, it becomes clear that specific parts of its architecture and training process contribute substantially to performance gains. Ablating certain components leads to measurable drops in accuracy, reinforcing the importance of REALM’s integrated retrieval and language model design.
-
-3. **End-to-End QA Improvement**: The reported results include end-to-end performance on open-domain QA tasks like NaturalQuestions-Open, demonstrating that the combination of improved retrieval, pre-training mechanisms, and downstream fine-tuning leads to higher accuracy in answer prediction.
-
-Together, these points highlight that REALM's improved retrieval quality, achieved notably through specialized pre-training, along with effective fine-tuning during downstream tasks, are key reasons for its enhanced open-domain QA performance [1][2][3][4][5].
-
-Citations:  
-[1]–[5] data/2002.08909v1.pdf chunks 2444–2448
+Citations:
+[1] source: data/2002.08909v1.pdf, chunk_id: 2002.08909v1-12-69a8bcd84db848ef23c1fa05
+[2] source: data/2002.08909v1.pdf, chunk_id: 2002.08909v1-3-e027b8ff59e74b51fa7f85b7
+[4] source: data/2002.08909v1.pdf, chunk_
 
 ### Multi-Agent Answer
 
-The study on REALM presents results for the NaturalQuestions-Open dataset after ablating critical components of the model to better isolate the effects of different parts [E1][E2][E3][E4][E5]. Both end-to-end question answering (QA) results and the frequency with which the gold answer appears in the top-5 retrieved documents before any fine-tuning are reported [E1][E2][E3]. Measuring the gold answer’s presence in the top-5 retrievals prior to fine-tuning is emphasized as a more significant way to isolate the contribution of retriever improvements gained during pre-training [E1][E2][E3][E4][E5]. This indicates that improving the retriever through pre-training enhances retrieval quality, which underlies the improved retrieval scores observed before fine-tuning [E1][E2][E3][E4][E5]. However, the provided evidence does not explicitly detail how downstream fine-tuning interacts with these aspects to improve overall QA performance, nor does it directly synthesize retrieval quality, pre-training, and fine-tuning as combined factors for performance gains.
+REALM improves open-domain question answering (Open-QA) performance through its unique pre-training approach, which integrates a learned textual knowledge retriever [E5]. The improvement of REALM over the ORQA system is attributed purely to its better pre-training methods, as the fine-tuning setups, hyperparameters, and training data are identical [E1].
+
+**Pre-training**
+REALM augments language model pre-training with a learned textual knowledge retriever [E5]. This framework enables the unsupervised pre-training of a knowledge retriever by using masked language modeling (MLM) as the learning signal [E4]. Through this MLM pre-training, the model aims to learn useful representations from unlabeled text corpora, specifically learning to encode syntactic, semantic, and world knowledge [E2]. This pre-training method is versatile and can be applied to both single-corpus settings (where both the question and knowledge source are Wikipedia) and separate-corpus settings (where the question source is CC-News and the knowledge source is Wikipedia) [E1].
+
+**Retrieval Quality**
+The retriever is trained using a performance-based signal from unsupervised text, rewarding retrievals that improve the language model's perplexity [E5]. The model is designed to retrieve and attend over documents from a large corpus, such as Wikipedia, during pre-training, fine-tuning, and inference [E4]. To manage the computational challenge of considering millions of candidate documents, the retriever is structured to use Maximum Inner Product Search (MIPS) so that computations can be cached and asynchronously updated [E5]. As a result, REALM achieves high performance while retrieving significantly fewer documents than other retrieval-based systems; specifically, REALM retrieves 5 documents to achieve its best performance, whereas other systems typically retrieve between 20 and 80 documents [E1].
+
+**Downstream Fine-tuning**
+The pre-trained model can be further trained through fine-tuning for downstream tasks like Open-QA, which often leads to better generalization than training from scratch [E2]. REALM's approach provides qualitative benefits during these stages, including increased modularity and interpretability [E2, E4, E5].
 
 ### Metrics
 
-- baseline_latency_seconds: 3.917
-- orchestrator_latency_seconds: 52.675
-- baseline_total_tokens: 1207
-- orchestrator_total_tokens: 16631
+- baseline_latency_seconds: 6.997
+- orchestrator_latency_seconds: 61.073
+- baseline_total_tokens: 4915
+- orchestrator_total_tokens: 34658
 - baseline_citation_count: 5
-- orchestrator_evidence_count: 20
-- fact_check_status_counts: {'supported': 3, 'unsupported': 3}
+- orchestrator_evidence_count: 9
+- fact_check_status_counts: {'supported': 12}
 
 ## Question 12
 
@@ -369,40 +443,36 @@ Explain step by step how a masked-language-model pre-training objective can impr
 
 ### Baseline Answer
 
-A masked-language-model (MLM) pre-training objective can improve downstream open-domain question answering (Open-QA) in REALM through the following steps:
+In REALM, a masked-language-model (MLM) pre-training objective improves downstream open-domain question answering (Open-QA) through the following process:
 
-1. **Pre-training with masked language modeling augmented by retrieval:**  
-   REALM extends the MLM objective by conditioning the prediction of masked tokens not only on the masked input text itself but also on retrieved relevant documents from a large knowledge corpus (e.g., Wikipedia). Specifically, during pre-training, REALM retrieves documents related to the masked text and uses them as additional context to better predict the masked tokens [1,3,5].
+1.  **Unsupervised Pre-training with MLM:** The model is pre-trained on an unlabeled corpus using a masked language modeling objective [1]. In this task, tokens are randomly masked in a text passage, and the model must predict the missing tokens using its representation of the masked input [1].
+2.  **Learning World Knowledge:** To successfully predict these missing tokens, a good MLM must learn to encode syntactic and semantic information as well as world knowledge [1]. 
+3.  **Augmentation with a Latent Knowledge Retriever:** REALM augments this pre-training by adding a learned textual knowledge retriever [2, 5]. This retriever allows the model to retrieve and attend over documents from a large corpus (such as Wikipedia) during the pre-training phase [2].
+4.  **End-to-End Optimization:** The retriever is trained using the performance-based signal from the MLM objective [5]. A retrieval that improves the language model's perplexity is rewarded, while uninformative retrievals are penalized [5]. This is achieved by modeling the "retrieve-then-predict" approach as a latent variable language model and optimizing the marginal likelihood [5]. This allows the signal from the language modeling objective to backpropagate through the retrieval step [2].
+5.  **Transfer to Downstream Open-QA:** Because the retriever is designed to retrieve text rather than labeled examples, it can transfer to other tasks [5]. The model, having learned to use retrieved documents to inform its predictions during pre-training, can then be fine-tuned for Open-QA, where it uses the retriever to find potentially relevant documents to help identify the correct answer string [3, 5].
 
-2. **Formulating retrieval as a latent variable:**  
-   REALM models the document retrieval as a latent variable process, i.e., for an input text x with masked tokens, it retrieves documents z from the corpus according to a learned distribution p(z|x). The model then predicts the masked tokens y conditioned on both x and z, combining the retrieval and prediction steps by marginalizing over retrieved documents:  
-   \[
-   p(y|x) = \sum_{z \in Z} p(y|z, x) p(z|x)
-   \]  
-   This approach enables the language model to learn which documents are useful for predicting the masked tokens [5].
-
-3. **End-to-end training to improve retriever and encoder:**  
-   The MLM pre-training in REALM trains both the retriever (which finds relevant documents) and the encoder (which conditions on documents plus the masked input) jointly via backpropagation, rewarding retrievals that reduce perplexity on the MLM task. This end-to-end training leads to improvements in both the retriever and the encoder components, which work best when trained together [1].
-
-4. **Salient span masking scheme:**  
-   REALM uses a specific masking scheme focused on "salient spans" of text (meaningful continuous spans), which is crucial for giving a consistent learning signal during latent variable training. This improves the quality of retrieval and representation learning, as the model is more sensitive to retrieval utility when predicting masked spans rather than random tokens or spans [1].
-
-5. **Effect on downstream Open-QA:**  
-   The joint retriever-augmented MLM pre-training helps the model acquire world knowledge by leveraging and integrating textual knowledge from retrieved documents. At downstream Open-QA fine-tuning time, the model benefits from this improved knowledge integration: given a question, the retriever finds relevant documents, and the encoder uses those documents to generate or extract the answer. This approach outper
+Citations:
+[1] data/2002.08909v1.pdf, chunk_id: 2002.08909v1-2-7f240c64641ad3f52fc62e97
+[2] data/2002.08909v1.pdf, chunk_id: 2002.08909v1-0-7d4268087c32fc1b944
 
 ### Multi-Agent Answer
 
-REALM improves downstream open-domain question answering (Open-QA) by augmenting the standard masked-language-model (MLM) pre-training objective with a learned textual knowledge retriever that fetches relevant documents from a large corpus such as Wikipedia before predicting masked tokens [E1][E4]. During pre-training, the retriever and the language model are trained jointly in an end-to-end manner, where the retriever is rewarded when the documents it retrieves help reduce the model’s perplexity on masked token prediction and penalized when retrievals are uninformative [E1]. This joint training allows the model to learn to select useful knowledge without explicit supervision for retrieval, although direct evidence describing the exact latent variable modeling or marginal likelihood optimization over all possible retrieved documents is not provided in the current notes [E1]. By conditioning masked token predictions on retrieved documents, REALM significantly increases the probability of correctly predicting masked tokens compared to standard MLMs like BERT; for instance, REALM assigns a probability of 0.129 to the masked token “Fermat” when marginalizing over top retrieved documents, whereas BERT assigns a probability of 1.1 × 10⁻¹⁴ without retrieval [E2]. This step-by-step integration of retrieval into MLM pre-training enables REALM to better ground its predictions in external knowledge, improving its open-domain question answering performance [E1][E4].
+The process of using a masked-language-model (MLM) pre-training objective to improve downstream open-domain question answering (Open-QA) in REALM involves the following steps:
+
+1.  **Unsupervised Pre-training via MLM**: The model performs a masked language modeling task, which requires predicting the original value of each [MASK] token in an input sentence [E4]. This process uses unlabeled text to learn useful language representations, including syntactic information, semantic information, and world knowledge [E1].
+2.  **Integration of a Latent Knowledge Retriever**: To capture knowledge in a more modular and interpretable way than storing it implicitly in neural network parameters, REALM augments pre-training with a latent knowledge retriever [E2]. This retriever allows the model to retrieve and attend over documents from a large corpus, such as Wikipedia, during the pre-training stage [E2].
+3.  **Backpropagation through Retrieval**: The MLM task serves as the learning signal for the entire system [E2]. This signal is backpropagated through a retrieval step that considers millions of documents [E2]. In this framework, retrieval that improves the language model's perplexity is rewarded, while uninformative retrieval is penalized [E3].
+4.  **Fine-tuning for Open-QA**: The resulting pre-trained model is then fine-tuned for the downstream Open-QA task [E1]. While the pre-training task involves predicting masked tokens, the fine-tuning task involves predicting an answer string that is found as a contiguous sequence of tokens within a document [E4, E5].
 
 ### Metrics
 
-- baseline_latency_seconds: 4.918
-- orchestrator_latency_seconds: 54.687
-- baseline_total_tokens: 5359
-- orchestrator_total_tokens: 23503
+- baseline_latency_seconds: 6.640
+- orchestrator_latency_seconds: 63.573
+- baseline_total_tokens: 5874
+- orchestrator_total_tokens: 38107
 - baseline_citation_count: 5
-- orchestrator_evidence_count: 20
-- fact_check_status_counts: {'supported': 6, 'unsupported': 4}
+- orchestrator_evidence_count: 11
+- fact_check_status_counts: {'unsupported': 4, 'supported': 8}
 
 ## Question 13
 
@@ -412,40 +482,36 @@ If REALM retrieves an irrelevant document, how would that affect p(z|x), p(y|z,x
 
 ### Baseline Answer
 
-If REALM retrieves an irrelevant document \( z \), it affects the probabilities and the final answer prediction as follows:
+If REALM retrieves an irrelevant document $z$, the following effects occur based on the provided context:
 
-1. **Effect on \( p(z|x) \):**  
-   The probability \( p(z|x) \) is the model's belief about the relevance of document \( z \) given the input query \( x \). When an irrelevant document is retrieved, \( p(z|x) \) is still assigned some value by the retriever based on the relevance score \( f(x, z) \) (computed as the inner product of embeddings). Although ideally irrelevant documents should have low \( p(z|x) \), the retrieval may still grant them non-negligible probability, especially if the retriever is imperfect.
+*   **$p(z|x)$:** The retriever models the distribution of possibly helpful documents $z$ given input $x$ [3]. An irrelevant document would be one where the relevance score $f(x, z)$ (the inner product of the vector embeddings of $x$ and $z$) does not appropriately reflect its lack of usefulness [3].
+*   **$p(y|z, x)$:** The value of the Retrieval Utility (RU) is used to measure how useful a document $z$ is for predicting the output $y$ [1]. If a document is irrelevant, it may result in a negative RU, which indicates that $z$ is less useful for predicting $y$ than a null document [1].
+*   **Final answer prediction ($p(y|x)$):** The overall likelihood of generating the answer $y$ is obtained by marginalizing over all possible documents $z$ using the formula $p(y|x) = \sum_{z \in Z} p(y|z, x)p(z|x)$ [3]. Because the model is trained to reward retrievals that improve perplexity and penalize uninformative ones, an uninformative (irrelevant) retrieval is something the system is designed to penalize [4].
 
-2. **Effect on \( p(y|z,x) \):**  
-   The term \( p(y|z,x) \) models the probability of predicting the correct output \( y \) given the document \( z \) and input \( x \). If \( z \) is irrelevant, \( p(y|z,x) \) will tend to be low because the document does not contain useful information for predicting the mask or answer.
-
-3. **Effect on the final answer prediction \( p(y|x) \):**  
-   The final prediction marginalizes over all documents \( z \) as \( p(y|x) = \sum_z p(y|z,x) p(z|x) \). Retrieving irrelevant documents assigns some probability mass to terms with low \( p(y|z,x) \), effectively lowering the expected quality of the prediction. This can reduce the overall likelihood \( p(y|x) \) of the correct answer.
-
-Furthermore, from the training perspective, the gradient update for the retriever parameters depends on the term  
-\[
-r(z) = \left[ p(y|z,x) \frac{1}{p(y|x)} - 1 \right] p(z|x),
-\]  
-which is positive only if \( p(y|z,x) > p(y|x) \) and negative otherwise [2]. An irrelevant document with low \( p(y|z,x) \) results in negative gradient update \( r(z) \), pushing the retriever to lower its relevance score \( f(x,z) \) and thus \( p(z|x) \).
-
-Moreover, the retrieval utility (RU) defined as  
-\[
-RU(z|x) = \log p(y|z,x) - \
+Citations:
+[1] source: data/2002.08909v1.pdf, chunk_id: 2002.08909v1-20-58cd33db77feaae8a3f8d036, chunk_index: 20
+[3] source: data/2002.08909v1.pdf, chunk_id: 2002.08909v1-3-e027b8ff59e74b51fa7f85b7, chunk_index: 3
+[4] source: data/2002.08909v1.pdf, chunk_id: 2002.08909v1-1-4db590f52f9234a64d454952, chunk_index: 1
 
 ### Multi-Agent Answer
 
-The provided evidence notes focus primarily on reporting how often the gold (correct) answer appears within the top-5 documents retrieved by REALM before any fine-tuning [E1][E2][E3][E4][E5]. These metrics serve to isolate the contribution of the retriever component during pre-training by measuring retrieval effectiveness [E1][E2]. However, none of the evidence notes explicitly discuss the probabilistic modeling aspects concerning p(z|x), p(y|z,x), or the final answer prediction when irrelevant documents are retrieved [E1][E2][E3][E4][E5]. Specifically, there is no direct evidence on how retrieving irrelevant documents affects the distribution p(z|x) over retrieved latent variables, the conditional probability p(y|z,x) of the answer given retrieved documents and query, or the final prediction accuracy [E1][E2][E3][E4][E5]. Therefore, the effect of retrieving irrelevant documents on p(z|x), p(y|z,x), and the final answer prediction is not addressed in the supplied evidence notes.
+The provided evidence does not explicitly state the specific mathematical changes to $p(z|x)$ or $p(y|z,x)$ when an irrelevant document is retrieved, but it provides information regarding Retrieval Utility (RU) and training signals:
+
+*   **Retrieval Utility and $p(y|z, x)$:** Retrieval Utility is defined as $RU = \log p(y |z, x) - \log p(y |\emptyset, x)$ [E1]. If a retrieved document $z$ is irrelevant to $x$, the RU may be negative, indicating that $z$ is less useful for predicting $y$ than a null document [E1].
+*   **Training Signals:** During training, the retriever is rewarded for retrievals that improve the language model's perplexity, while uninformative retrievals should be penalized [E8].
+*   **$p(z|x)$:** The evidence does not provide a direct description of how the probability $p(z|x)$ specifically changes when a document is irrelevant, though it notes that a "trivial" retrieval (where $z$ is too informative due to being an exact match) results in a large positive gradient for $p(z|x)$ [E2].
+
+In summary, while the notes do not provide the exact functional form for how these probabilities shift when a document is irrelevant, they indicate that an irrelevant retrieval results in a negative RU [E1] and that such uninformative retrievals are intended to be penalized during the training process [E8].
 
 ### Metrics
 
-- baseline_latency_seconds: 4.981
-- orchestrator_latency_seconds: 48.547
-- baseline_total_tokens: 4483
-- orchestrator_total_tokens: 15484
+- baseline_latency_seconds: 6.745
+- orchestrator_latency_seconds: 32.564
+- baseline_total_tokens: 5063
+- orchestrator_total_tokens: 19562
 - baseline_citation_count: 5
-- orchestrator_evidence_count: 15
-- fact_check_status_counts: {'supported': 2, 'unsupported': 3}
+- orchestrator_evidence_count: 9
+- fact_check_status_counts: {'supported': 5}
 
 ## Question 14
 
@@ -455,24 +521,46 @@ What limitations, uncertainties, or missing comparisons should be noted when int
 
 ### Baseline Answer
 
-When interpreting REALM's reported results, a key limitation or uncertainty to note is that the evaluation frequently relies on how often the gold answer appears in the top-5 retrievals before any fine-tuning is applied. This metric is intended to more clearly isolate the contribution of improving the retriever during pre-training, but it may not fully reflect the end-to-end performance after fine-tuning. Thus, results should be considered with an understanding that some reported metrics focus specifically on retrieval performance pre-fine-tuning, potentially limiting direct comparison to end-to-end results [1][2][3][4][5].
+When interpreting REALM's reported results, the following limitations, uncertainties, or missing comparisons should be noted:
 
-Citations:  
-[1][2][3][4][5] from data/2002.08909v1.pdf, chunks 2505.0 to 2516.0
+*   **Missing Data for Benefit:** Certain data could potentially benefit REALM, but it was not used in the experiments [1].
+*   **Uncertainty in Retrieval Utility (RU):** A negative RU indicates that the document $z$ is less useful for predicting $y$ than the null document; however, this could mean $z$ is irrelevant to $x$, or it could mean the masked tokens in $x$ do not require world knowledge, or that the necessary world knowledge is already sufficiently commonplace within the model's parameters [2].
+*   **Impact of Index Staleness:** Using a stale MIPS index can hurt model training, and results suggest that further reducing this staleness could offer better optimization [4].
+*   **Sensitivity to Masking:** The latent variable learning used in REALM relies heavily on the utility of retrieval and is therefore more sensitive to a consistent learning signal [4].
+*   **Scope of Work:** The presented work is considered a "minimal instantiation" of a family of REALM-like approaches [5]. Potential generalizations to structured knowledge, multi-lingual settings, and multi-modal settings were identified as future work [5].
+
+Citations:
+[1] source: data/2002.08909v1.pdf, chunk_id: 2002.08909v1-12-69a8bcd84db848ef23c1fa05
+[2] source: data/2002.08909v1.pdf, chunk_id: 2002.08909v1-20-58cd33db77feaae8a3f8d036
+[4] source: data/2002.08909v1.pdf, chunk_id: 2002.08909v1-13-8b5179bb43546a69e37d136e
+[5] source: data/2002.08909v1.pdf, chunk_id: 2002.08909v1-15-e73576
 
 ### Multi-Agent Answer
 
-When interpreting REALM’s reported results, it is important to note that the model provides both end-to-end performance metrics and the frequency with which the gold answer appears among the top-5 retrieved documents prior to any fine-tuning [E1][E2]. This top-5 retrieval metric is specifically designed to more significantly isolate the contribution of improvements to the retriever component made during pre-training, thereby separating these effects from those of subsequent fine-tuning [E3][E4][E5]. However, the available evidence does not include details on comparisons between REALM and other retrieval-based models or baseline approaches, which limits the ability to contextualize REALM’s improvements relative to alternative methods. Additionally, while the top-5 retrieval accuracy metric isolates retriever contributions, the evidence lacks elaboration on downstream effects or error analysis, introducing some uncertainty in fully assessing REALM’s overall effectiveness and limitations [E1–E5].
+When interpreting REALM's reported results, the following limitations, uncertainties, and comparisons should be noted:
+
+**Data and Experimental Limitations**
+* Certain types of data that could potentially benefit REALM were not used in the experiments [E1].
+* Using a stale MIPS index can negatively impact model training, which necessitates frequent index refreshes for optimization [E2].
+* Optimal results for the model require both the encoder and the retriever to act in unison, even though both components benefit from being trained separately [E2].
+
+**Uncertainties in Retrieval Utility (RU)**
+* A negative Retrieval Utility (RU) indicates that a retrieved document is less useful for predicting a masked token than a null document [E4].
+* This negative utility is uncertain in its cause, as it could mean the document is irrelevant to the question, the masked tokens do not require world knowledge, or the necessary world knowledge is already embedded within the model’s parameters [E4].
+
+**Comparisons and Baselines**
+* The most direct comparison to REALM is ORQA, because the two share identical training data, hyperparameters, and fine-tuning setups [E1, E5].
+* For generation-based baselines, the study compares REALM against T5 [E5].
 
 ### Metrics
 
-- baseline_latency_seconds: 2.558
-- orchestrator_latency_seconds: 43.749
-- baseline_total_tokens: 968
-- orchestrator_total_tokens: 14654
+- baseline_latency_seconds: 6.835
+- orchestrator_latency_seconds: 31.781
+- baseline_total_tokens: 4632
+- orchestrator_total_tokens: 19097
 - baseline_citation_count: 5
-- orchestrator_evidence_count: 11
-- fact_check_status_counts: {'supported': 2, 'unsupported': 2}
+- orchestrator_evidence_count: 9
+- fact_check_status_counts: {'supported': 8}
 
 ## Question 15
 
@@ -482,21 +570,36 @@ Which claims about REALM's performance or mechanism cannot be verified unless th
 
 ### Baseline Answer
 
-Claims about REALM's performance or mechanism that cannot be verified unless specific experimental evidence from the paper is cited include details on how often the gold answer appears in the top-5 retrievals before any fine-tuning, as this metric isolates the contribution of the retriever's improvement during pre-training. Verification of such claims requires direct experimental results or quantitative data reported in the paper showing these retrieval statistics or detailed end-to-end performance measures [1][2][3][4][5].
+Based on the provided text, the following claims about REALM's performance or mechanism cannot be verified without citing specific experimental evidence (such as the contents of Table 2, Table 1, or Table 4):
 
-Citations:  
-[1][2][3][4][5] data/2002.08909v1.pdf chunks 2506, 2507, 2515, 2516, 2519
+*   **Comparison to ORQA:** While it is stated that the improvement of REALM over ORQA is "purely due to better pre-training methods" [1], the specific extent of this improvement or the direct comparison of results requires the experimental data mentioned in the context.
+*   **Overall Performance vs. Document Count:** The claim that REALM "gets the overall best performance while only retrieving 5 documents" compared to other retrieval-based systems that retrieve 20 to 80 documents [1] requires the underlying experimental results to be verified.
+*   **Ablation Results for NaturalQuestions-Open:** The specific findings regarding the ablation of critical components of REALM and how often the gold answer appears in the top-5 retrievals are contained in Table 2 [1, 4], which is not provided in full detail.
+*   **Encoder and Retriever Benefits:** The claim that "both the encoder and retriever benefit from REALM training separately, but the best result requires both components acting in unison" [4] relies on the results of resetting parameters to their baseline state, which are part of the experimental analysis.
+*   **MIPS Index Refresh Rate:** The assertion that "a stale index can hurt model training" and that reducing staleness could offer better optimization is based on results in Table 2 [4].
+*   **Knowledge Adaptation:** The example demonstrating how REALM adapts to an updated knowledge corpus (specifically regarding the "Excellent Cadaver" Wikipedia page) is illustrated in Table 4 [3], which provides the specific evidence for this mechanism.
+*   **Retrieval Utility (RU) Trends:** The observation that RU "increases steadily over the course of pre-training" and is "more predictive of good performance... than even the overall log-likelihood" [3] refers to data presented in Figure 4 [3].
+*   **Direct Comparison of Models:** The comparison between REALM and BERT regarding the probability assigned to the correct term "Fermat" is presented as evidence in Table 3 [4].
+
+Citations:
+[1] source: data/2002.08909v1.pdf, chunk_id: 2002.08909v1-
 
 ### Multi-Agent Answer
 
-Claims about REALM’s performance or mechanism that require specific experimental evidence from the paper to be verified include those related to how often the gold answer appears in the top-5 retrievals prior to any fine-tuning [E1][E2][E3][E4][E5]. This frequency metric is reported as a key measure because it more significantly isolates the contribution of improving the retriever during pre-training [E1][E2][E3][E4][E5]. Additionally, claims regarding the impact of ablating critical components of REALM—such as experiments conducted on the NaturalQuestions-Open dataset—depend on citing specific results showing this top-5 gold answer retrieval frequency before fine-tuning [E2]. Without these particular experimental metrics and details, claims about the effectiveness of the retriever or the effects of architectural changes on retrieval performance cannot be verified [E1][E2][E3][E4][E5].
+Based on the provided evidence, the following claims regarding REALM's performance and mechanism are verifiable through specific experimental evidence or data:
+
+*   **Improvement over ORQA:** The claim that REALM's improvement over ORQA is purely due to better pre-training methods can be verified because the fine-tuning setup, hyperparameters, and training data between the two models were identical [E1].
+*   **Comparative Accuracy:** The claim that REALM outperforms all previous state-of-the-art methods for both explicit and implicit knowledge storage on three popular Open-QA benchmarks can be verified by the reported margin of 4-16% absolute accuracy [E9, E10].
+*   **Retrieval Efficiency:** The claim that REALM achieves the best overall performance while retrieving fewer documents can be verified by the specific measurements that REALM retrieves 5 documents, whereas other retrieval-based systems typically retrieve between 20 and 80 documents [E1].
+*   **Predictive Utility of RU:** The claim that Retrieval Utility (RU) is a more predictive indicator of good performance on downstream Open-QA tasks than overall log-likelihood is supported by the findings regarding RU behavior [E8].
+*   **Corpus Adaptability:** The claim that a REALM model can adapt to an updated knowledge corpus can be verified by the example of a model pre-trained on a 2018 corpus successfully retrieving "Lawrence" from a Wikipedia page added in 2019 when using a 2020 corpus [E8].
 
 ### Metrics
 
-- baseline_latency_seconds: 2.843
-- orchestrator_latency_seconds: 49.297
-- baseline_total_tokens: 950
-- orchestrator_total_tokens: 14573
+- baseline_latency_seconds: 6.744
+- orchestrator_latency_seconds: 29.822
+- baseline_total_tokens: 4619
+- orchestrator_total_tokens: 19656
 - baseline_citation_count: 5
-- orchestrator_evidence_count: 12
-- fact_check_status_counts: {'supported': 4}
+- orchestrator_evidence_count: 10
+- fact_check_status_counts: {'supported': 5}

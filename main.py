@@ -283,42 +283,61 @@ async def _run_agent_config_experiment(
     print(f"running {config.name}")
     _print_agent_config(config)
 
-    baseline_agent = build_baseline_agent(retriever, settings, config.baseline_model)
-    orchestrator_agent = build_orchestrator_agent(retriever, settings, config)
-    question_concurrency = _env_int("QUESTION_CONCURRENCY", 3)
-    logger.info(
-        "Running experiment questions slug=%s question_count=%s question_concurrency=%s",
-        config.slug,
-        len(QUESTIONS),
-        question_concurrency,
-    )
-    print(f"question_concurrency: {question_concurrency}")
-    semaphore = asyncio.Semaphore(question_concurrency)
+    output_dir = RESULTS_DIR / config.slug
+    output_dir.mkdir(parents=True, exist_ok=True)
 
-    async def run_question(index: int, question: str) -> QuestionRunMetrics:
-        async with semaphore:
-            logger.info("Starting question task slug=%s question_index=%s", config.slug, index)
-            result = await _compare_question(
-                config=config,
-                experiment_name=f"{config.name}: question {index}",
-                question_index=index,
-                question_type=_question_type(index),
-                question=question,
-                baseline_agent=baseline_agent,
-                orchestrator_agent=orchestrator_agent,
-                top_k=config.top_k,
-            )
-            logger.info("Finished question task slug=%s question_index=%s", config.slug, index)
-            return result
+    completed = _load_partial_metrics(output_dir, config)
+    remaining_indices = [i for i in range(1, len(QUESTIONS) + 1) if i not in completed]
+    print(f"completed_questions: {len(completed)}/{len(QUESTIONS)}")
+    print(f"remaining_questions: {len(remaining_indices)}")
 
-    metrics = list(
-        await asyncio.gather(
-            *(run_question(index, question) for index, question in enumerate(QUESTIONS, start=1))
+    if remaining_indices:
+        baseline_agent = build_baseline_agent(retriever, settings, config.baseline_model)
+        orchestrator_agent = build_orchestrator_agent(retriever, settings, config)
+        question_concurrency = _env_int("QUESTION_CONCURRENCY", 3)
+        logger.info(
+            "Running experiment questions slug=%s remaining=%s question_concurrency=%s",
+            config.slug,
+            len(remaining_indices),
+            question_concurrency,
         )
-    )
-    metrics.sort(key=lambda metric: metric.question_index)
+        print(f"question_concurrency: {question_concurrency}")
+        semaphore = asyncio.Semaphore(question_concurrency)
+        save_lock = asyncio.Lock()
 
-    output_dir = _save_experiment_results(config, metrics)
+        async def run_and_save(index: int, question: str) -> QuestionRunMetrics:
+            async with semaphore:
+                logger.info("Starting question task slug=%s question_index=%s", config.slug, index)
+                result = await _compare_question(
+                    config=config,
+                    experiment_name=f"{config.name}: question {index}",
+                    question_index=index,
+                    question_type=_question_type(index),
+                    question=question,
+                    baseline_agent=baseline_agent,
+                    orchestrator_agent=orchestrator_agent,
+                    top_k=config.top_k,
+                )
+                async with save_lock:
+                    completed[result.question_index] = result
+                    all_so_far = [completed[i] for i in sorted(completed)]
+                    _write_metrics_json(output_dir, config, all_so_far)
+                    _write_answers(output_dir, config, all_so_far)
+                logger.info(
+                    "Saved question result slug=%s question_index=%s completed=%s/%s",
+                    config.slug,
+                    index,
+                    len(completed),
+                    len(QUESTIONS),
+                )
+                return result
+
+        await asyncio.gather(
+            *(run_and_save(i, QUESTIONS[i - 1]) for i in remaining_indices)
+        )
+
+    all_metrics = [completed[i] for i in sorted(completed)]
+    _save_experiment_results(config, all_metrics)
     await _judge_experiment_results(output_dir, settings)
     logger.info("Finished experiment slug=%s output_dir=%s", config.slug, output_dir)
     print(f"\nsaved_results: {output_dir}")
@@ -797,7 +816,7 @@ def _orchestrator_evidence_payload(result: MultiAgentAnswer) -> list[dict[str, o
 
 def _print_model_config(settings: OpenAISettings) -> None:
     default_model = settings.openai_answer_model
-    default_strong_model = "gpt-4.1"
+    default_strong_model = "google/gemma-4-26B-A4B-it"
     print("model_config")
     print(f"  baseline: {_model_for('baseline', default_model)}")
     print(f"  orchestrator: {_model_for('orchestrator', default_model)}")
@@ -807,8 +826,8 @@ def _print_model_config(settings: OpenAISettings) -> None:
     print(f"  final_synthesis: {_model_for('final_synthesis', default_model)}")
     print(f"  fast_agent: {os.getenv('FAST_AGENT_MODEL', default_model)}")
     print(f"  strong_agent: {os.getenv('STRONG_AGENT_MODEL', default_strong_model)}")
-    print(f"  judge: {os.getenv('JUDGE_MODEL', 'gpt-5.1')}")
-    print(f"  embedding: {settings.openai_embedding_model}")
+    print(f"  judge: {os.getenv('JUDGE_MODEL', 'google/gemma-4-26B-A4B-it')}")
+    print(f"  embedding: BAAI/bge-large-en-v1.5 (local)")
 
 
 def _default_agent_model_config(default_model: str) -> AgentModelConfig:
@@ -840,6 +859,12 @@ def _print_agent_config(config: AgentModelConfig) -> None:
     print(f"  summarization: {config.summarization_model}")
     print(f"  fact_check: {config.fact_check_model}")
     print(f"  final_synthesis: {config.final_synthesis_model}")
+
+
+def _atomic_write_text(path: Path, content: str) -> None:
+    tmp_path = path.with_suffix(path.suffix + ".tmp")
+    tmp_path.write_text(content, encoding="utf-8")
+    tmp_path.replace(path)
 
 
 def _save_experiment_results(config: AgentModelConfig, metrics: list[QuestionRunMetrics]) -> Path:
@@ -908,7 +933,7 @@ def _write_answers(output_dir: Path, config: AgentModelConfig, metrics: list[Que
             ]
         )
 
-    (output_dir / "answers.md").write_text("\n".join(lines), encoding="utf-8")
+    _atomic_write_text(output_dir / "answers.md", "\n".join(lines))
     logger.info("Wrote answers file=%s", output_dir / "answers.md")
 
 
@@ -925,8 +950,8 @@ def _write_metrics_json(output_dir: Path, config: AgentModelConfig, metrics: lis
             for metric in metrics
         ],
     }
-    (output_dir / "metrics.json").write_text(json.dumps(payload, indent=2), encoding="utf-8")
-    logger.info("Wrote metrics file=%s", output_dir / "metrics.json")
+    _atomic_write_text(output_dir / "metrics.json", json.dumps(payload, indent=2))
+    logger.info("Wrote metrics file=%s questions=%s", output_dir / "metrics.json", len(metrics))
 
 
 def _plot_latency(output_dir: Path, metrics: list[QuestionRunMetrics]) -> None:
@@ -1041,24 +1066,33 @@ async def _judge_experiment_results(output_dir: Path, settings: OpenAISettings) 
         logger.warning("No metrics file found for judge path=%s", metrics_path)
         return
 
-    judge_model = os.getenv("JUDGE_MODEL", "gpt-5.1")
+    judge_model = os.getenv("JUDGE_MODEL", "google/gemma-4-26B-A4B-it")
     logger.info("Starting judge pass output_dir=%s judge_model=%s", output_dir, judge_model)
     judge_client = _llm_client(settings, judge_model)
     judge_concurrency = _env_int("JUDGE_CONCURRENCY", 4)
     judge_semaphore = asyncio.Semaphore(judge_concurrency)
-    logger.info(
-        "Running judge pass output_dir=%s judge_concurrency=%s",
-        output_dir,
-        judge_concurrency,
-    )
 
-    payload = json.loads(metrics_path.read_text(encoding="utf-8"))
+    try:
+        payload = json.loads(metrics_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        logger.warning("Corrupted metrics file, skipping judge pass path=%s", metrics_path)
+        return
     questions = payload.get("questions") if isinstance(payload, dict) else None
     if not isinstance(questions, list):
         logger.warning("Metrics file does not contain question list path=%s", metrics_path)
         return
 
-    async def judge_with_limit(
+    existing_scores, completed_pairs = _load_partial_judge_scores(output_dir, judge_model)
+    scores: list[dict[str, object]] = list(existing_scores)
+    save_lock = asyncio.Lock()
+    logger.info(
+        "Judge resume state output_dir=%s completed=%s total_needed=%s",
+        output_dir,
+        len(completed_pairs),
+        len(questions) * 2,
+    )
+
+    async def judge_and_save(
         system_name: str,
         question_index: int,
         question_type: str,
@@ -1073,7 +1107,7 @@ async def _judge_experiment_results(output_dir: Path, settings: OpenAISettings) 
                 question_index,
                 system_name,
             )
-            return await _judge_single_answer(
+            result = await _judge_single_answer(
                 judge_client=judge_client,
                 judge_model=judge_model,
                 experiment_slug=output_dir.name,
@@ -1084,6 +1118,21 @@ async def _judge_experiment_results(output_dir: Path, settings: OpenAISettings) 
                 answer=answer,
                 evidence=evidence,
             )
+            async with save_lock:
+                scores.append(result)
+                sorted_scores = sorted(
+                    scores,
+                    key=lambda s: (_optional_int(s.get("question_index")) or 0, str(s.get("system", ""))),
+                )
+                _write_judge_scores(output_dir, judge_model, sorted_scores)
+            logger.info(
+                "Saved judge score experiment=%s question=%s system=%s completed=%s",
+                output_dir.name,
+                question_index,
+                system_name,
+                len(scores),
+            )
+            return result
 
     judge_tasks = []
     for question in questions:
@@ -1092,32 +1141,41 @@ async def _judge_experiment_results(output_dir: Path, settings: OpenAISettings) 
         question_index = _optional_int(question.get("question_index")) or 0
         question_type = str(question.get("question_type", "unknown"))
         question_text = str(question.get("question", ""))
-        judge_tasks.append(
-            judge_with_limit(
-                system_name="baseline",
-                question_index=question_index,
-                question_type=question_type,
-                question_text=question_text,
-                answer=str(question.get("baseline_answer", "")),
-                evidence=_list_of_dicts(question.get("baseline_evidence")),
-            )
-        )
-        judge_tasks.append(
-            judge_with_limit(
-                system_name="multi_agent",
-                question_index=question_index,
-                question_type=question_type,
-                question_text=question_text,
-                answer=str(question.get("orchestrator_answer", "")),
-                evidence=_list_of_dicts(question.get("orchestrator_evidence")),
-            )
-        )
 
-    scores = list(await asyncio.gather(*judge_tasks))
-    scores.sort(key=lambda score: (_optional_int(score.get("question_index")) or 0, str(score.get("system", ""))))
-    _write_judge_scores(output_dir, judge_model, scores)
-    _plot_judge_scores(output_dir, scores)
-    logger.info("Judge pass complete output_dir=%s scores=%s", output_dir, len(scores))
+        if (question_index, "baseline") not in completed_pairs:
+            judge_tasks.append(
+                judge_and_save(
+                    system_name="baseline",
+                    question_index=question_index,
+                    question_type=question_type,
+                    question_text=question_text,
+                    answer=str(question.get("baseline_answer", "")),
+                    evidence=_list_of_dicts(question.get("baseline_evidence")),
+                )
+            )
+        if (question_index, "multi_agent") not in completed_pairs:
+            judge_tasks.append(
+                judge_and_save(
+                    system_name="multi_agent",
+                    question_index=question_index,
+                    question_type=question_type,
+                    question_text=question_text,
+                    answer=str(question.get("orchestrator_answer", "")),
+                    evidence=_list_of_dicts(question.get("orchestrator_evidence")),
+                )
+            )
+
+    if judge_tasks:
+        print(f"judging: {len(judge_tasks)} remaining evaluations")
+        await asyncio.gather(*judge_tasks)
+
+    final_scores = sorted(
+        scores,
+        key=lambda s: (_optional_int(s.get("question_index")) or 0, str(s.get("system", ""))),
+    )
+    _write_judge_scores(output_dir, judge_model, final_scores)
+    _plot_judge_scores(output_dir, final_scores)
+    logger.info("Judge pass complete output_dir=%s scores=%s", output_dir, len(final_scores))
 
 
 async def _judge_single_answer(
@@ -1132,39 +1190,81 @@ async def _judge_single_answer(
     evidence: list[dict[str, object]],
 ) -> dict[str, object]:
     evidence_text = _format_judge_evidence(evidence)
-    prompt = f"""Evaluate the answer against the question and provided evidence.
-
-Return only JSON with this exact shape:
-{{
-  "factual_accuracy": 1,
-  "completeness": 1,
-  "citation_quality": 1,
-  "clarity": 1,
-  "unsupported_claims": 0,
-  "rationale": "short explanation"
-}}
-
-Scoring:
-- factual_accuracy: 1-5, where 5 means all important claims are supported by the evidence.
-- completeness: 1-5, where 5 means the answer fully addresses the question.
-- citation_quality: 1-5, where 5 means citations are present, valid, specific, and tied to claims.
-- clarity: 1-5, where 5 means clear, well organized, and easy to follow.
-- unsupported_claims: count claims in the answer that are not supported by the evidence.
+    prompt = f"""You are auditing a research QA system for flaws. Your job is to find problems with the answer below, not to confirm it is good. Start from a baseline score of 5 for each metric and adjust up or down based on what you find.
 
 Question:
 {question}
 
-Evidence:
+Evidence provided to the system:
 {evidence_text}
 
-Answer:
+Answer to evaluate:
 {answer}
+
+---
+
+Now evaluate. For each factual claim in the answer:
+1. Check: is there a specific citation immediately after the claim?
+2. Check: does the cited evidence actually support that exact claim?
+3. Check: does the answer contain information NOT present in any evidence chunk? (this is hallucination — penalize heavily)
+4. Check: does the answer address ALL parts of the question?
+
+Mandatory deductions:
+- Each claim without a citation: -1 from citation_quality
+- Each claim where the citation doesn't match the content: -1 from factual_accuracy
+- Each part of the question not addressed: -2 from completeness
+- Each sentence that adds no information (filler/repetition): -1 from clarity
+- Any hallucinated fact (not in evidence): -2 from factual_accuracy
+
+Scoring scale (1-10, start at 5 and adjust):
+
+factual_accuracy (1-10):
+  9-10: Every claim precisely supported by cited evidence. Zero hallucination.
+  7-8:  Most claims supported. One minor inaccuracy or weakly supported claim.
+  5-6:  Some claims lack evidence support or one claim contradicts evidence.
+  3-4:  Major factual errors or most claims unsupported.
+  1-2:  Largely fabricated or contradicts evidence.
+
+completeness (1-10):
+  9-10: Every part of the question addressed with appropriate depth. Nothing missing.
+  7-8:  Main question answered but misses a secondary aspect or lacks depth on one point.
+  5-6:  Partially addresses the question. Key aspects mentioned but not developed.
+  3-4:  Only tangentially addresses the question or misses major components.
+  1-2:  Does not address the question.
+
+citation_quality (1-10):
+  9-10: Every factual claim has a specific, correct inline citation placed immediately after the claim.
+  7-8:  Most claims cited. One or two vague or misplaced citations.
+  5-6:  Some citations but many claims uncited, or citations dumped at paragraph end.
+  3-4:  Few citations, or citations don't match claims.
+  1-2:  No citations or entirely incorrect usage.
+
+clarity (1-10):
+  9-10: Concise, well-structured, zero filler. Every sentence adds value.
+  7-8:  Clear and readable but slightly verbose or could be better organized.
+  5-6:  Understandable but disorganized, repetitive, or contains filler.
+  3-4:  Hard to follow or excessively verbose.
+  1-2:  Incoherent.
+
+unsupported_claims: count of factual claims with no supporting evidence citation.
+
+Return only JSON:
+{{
+  "factual_accuracy": 5,
+  "completeness": 5,
+  "citation_quality": 5,
+  "clarity": 5,
+  "unsupported_claims": 0,
+  "rationale": "List specific flaws found. If no flaws, explain what makes it excellent."
+}}
 """
     completion = await judge_client.complete(
         prompt,
         instructions=(
-            "You are an external research QA evaluator. Judge only against the provided evidence. "
-            "Be strict about unsupported claims and citation quality. Return valid JSON only."
+            "You are a harsh, detail-oriented research QA auditor. Your reputation depends on catching errors others miss. "
+            "Never assume an answer is correct — verify every claim against the evidence. "
+            "A score of 8+ means you found almost nothing wrong. Most answers should score 5-7. "
+            "Return valid JSON only."
         ),
         max_output_tokens=800,
     )
@@ -1188,7 +1288,15 @@ def _parse_judge_response(text: str) -> dict[str, object]:
         payload = json.loads(_extract_json_object(text))
     except json.JSONDecodeError:
         logger.warning("Could not parse judge JSON response; using fallback scores text=%s", text[:500])
-        payload = {}
+        return {
+            "factual_accuracy": 1,
+            "completeness": 1,
+            "citation_quality": 1,
+            "clarity": 1,
+            "unsupported_claims": 0,
+            "rationale": "JUDGE_PARSE_FAILURE: judge did not return valid JSON",
+            "parse_failed": True,
+        }
 
     return {
         "factual_accuracy": _clamp_score(payload.get("factual_accuracy")),
@@ -1212,7 +1320,7 @@ def _clamp_score(value: object) -> int:
     if isinstance(value, bool):
         return 1
     if isinstance(value, (int, float)):
-        return min(5, max(1, int(round(value))))
+        return min(10, max(1, int(round(value))))
     return 1
 
 
@@ -1230,7 +1338,7 @@ def _format_judge_evidence(evidence: list[dict[str, object]]) -> str:
 
 def _write_judge_scores(output_dir: Path, judge_model: str, scores: list[dict[str, object]]) -> None:
     json_path = output_dir / "judge_scores.json"
-    json_path.write_text(json.dumps({"judge_model": judge_model, "scores": scores}, indent=2), encoding="utf-8")
+    _atomic_write_text(json_path, json.dumps({"judge_model": judge_model, "scores": scores}, indent=2))
 
     lines = [
         "# External Judge Scores",
@@ -1254,7 +1362,7 @@ def _write_judge_scores(output_dir: Path, judge_model: str, scores: list[dict[st
             )
         )
     md_path = output_dir / "judge_scores.md"
-    md_path.write_text("\n".join(lines), encoding="utf-8")
+    _atomic_write_text(md_path, "\n".join(lines))
     logger.info("Wrote judge scores files json=%s markdown=%s", json_path, md_path)
 
 
@@ -1420,7 +1528,7 @@ def _add_judge_summary(row: dict[str, object], judge_path: Path) -> None:
 
 def _write_summary_json(output_dir: Path, rows: list[dict[str, object]]) -> None:
     path = output_dir / "summary_metrics.json"
-    path.write_text(json.dumps({"experiments": rows}, indent=2), encoding="utf-8")
+    _atomic_write_text(path, json.dumps({"experiments": rows}, indent=2))
     logger.info("Wrote summary metrics file=%s", path)
 
 
@@ -1503,7 +1611,7 @@ def _write_summary_markdown(output_dir: Path, rows: list[dict[str, object]]) -> 
             )
 
     path = output_dir / "summary.md"
-    path.write_text("\n".join(lines), encoding="utf-8")
+    _atomic_write_text(path, "\n".join(lines))
     logger.info("Wrote summary markdown file=%s", path)
 
 
@@ -1725,7 +1833,7 @@ def _questions_payload_complete(questions_payload: object) -> bool:
 
 
 def _judge_payload_complete(judge_payload: dict[str, object]) -> bool:
-    expected_judge_model = os.getenv("JUDGE_MODEL", "gpt-5.1")
+    expected_judge_model = os.getenv("JUDGE_MODEL", "google/gemma-4-26B-A4B-it")
     if judge_payload.get("judge_model") != expected_judge_model:
         return False
 
@@ -1756,6 +1864,104 @@ def _optional_int(value: object) -> int | None:
     if isinstance(value, int):
         return value
     return None
+
+
+def _load_partial_metrics(output_dir: Path, config: AgentModelConfig) -> dict[int, QuestionRunMetrics]:
+    metrics_path = output_dir / "metrics.json"
+    payload = _read_json_dict(metrics_path)
+    if payload is None:
+        return {}
+
+    config_payload = payload.get("config")
+    if not isinstance(config_payload, dict) or not _config_payload_matches(config_payload, config):
+        logger.info("Config mismatch in partial metrics, starting fresh output_dir=%s", output_dir)
+        return {}
+
+    questions = payload.get("questions")
+    if not isinstance(questions, list):
+        return {}
+
+    completed: dict[int, QuestionRunMetrics] = {}
+    for q in questions:
+        if not isinstance(q, dict):
+            continue
+        metric = _reconstruct_question_metrics(q)
+        if metric is not None:
+            completed[metric.question_index] = metric
+
+    logger.info("Loaded partial metrics output_dir=%s completed=%s", output_dir, len(completed))
+    return completed
+
+
+def _reconstruct_question_metrics(q: dict) -> QuestionRunMetrics | None:
+    try:
+        baseline_usage = q.get("baseline_token_usage", {})
+        if not isinstance(baseline_usage, dict):
+            baseline_usage = {}
+        orchestrator_usage = q.get("orchestrator_token_usage", {})
+        if not isinstance(orchestrator_usage, dict):
+            orchestrator_usage = {}
+        return QuestionRunMetrics(
+            experiment_slug=str(q.get("experiment_slug", "")),
+            experiment_name=str(q.get("experiment_name", "")),
+            question_index=int(q["question_index"]),
+            question_type=str(q.get("question_type", "")),
+            question=str(q.get("question", "")),
+            top_k=int(q.get("top_k", 5)),
+            baseline_latency_seconds=float(q.get("baseline_latency_seconds", 0)),
+            orchestrator_latency_seconds=float(q.get("orchestrator_latency_seconds", 0)),
+            baseline_token_usage=TokenUsage(
+                input_tokens=_optional_int(baseline_usage.get("input_tokens")),
+                output_tokens=_optional_int(baseline_usage.get("output_tokens")),
+                total_tokens=_optional_int(baseline_usage.get("total_tokens")),
+            ),
+            orchestrator_token_usage=TokenUsage(
+                input_tokens=_optional_int(orchestrator_usage.get("input_tokens")),
+                output_tokens=_optional_int(orchestrator_usage.get("output_tokens")),
+                total_tokens=_optional_int(orchestrator_usage.get("total_tokens")),
+            ),
+            baseline_citation_count=int(q.get("baseline_citation_count", 0)),
+            orchestrator_evidence_count=int(q.get("orchestrator_evidence_count", 0)),
+            fact_check_status_counts=q.get("fact_check_status_counts") or {},
+            baseline_evidence=_list_of_dicts(q.get("baseline_evidence")),
+            orchestrator_evidence=_list_of_dicts(q.get("orchestrator_evidence")),
+            baseline_answer=str(q.get("baseline_answer", "")),
+            orchestrator_answer=str(q.get("orchestrator_answer", "")),
+        )
+    except (KeyError, TypeError, ValueError) as exc:
+        logger.warning("Could not reconstruct question metrics: %s", exc)
+        return None
+
+
+def _load_partial_judge_scores(
+    output_dir: Path, judge_model: str
+) -> tuple[list[dict[str, object]], set[tuple[int, str]]]:
+    judge_path = output_dir / "judge_scores.json"
+    payload = _read_json_dict(judge_path)
+    if payload is None:
+        return [], set()
+
+    if payload.get("judge_model") != judge_model:
+        logger.info("Judge model changed, discarding old scores output_dir=%s", output_dir)
+        return [], set()
+
+    scores = payload.get("scores")
+    if not isinstance(scores, list):
+        return [], set()
+
+    completed_pairs: set[tuple[int, str]] = set()
+    valid_scores: list[dict[str, object]] = []
+    for score in scores:
+        if not isinstance(score, dict):
+            continue
+        qi = _optional_int(score.get("question_index")) or 0
+        system = str(score.get("system", ""))
+        if qi > 0 and system:
+            completed_pairs.add((qi, system))
+            valid_scores.append(score)
+
+    logger.info("Loaded partial judge scores output_dir=%s completed=%s", output_dir, len(completed_pairs))
+    return valid_scores, completed_pairs
 
 
 async def _ingest_data(embedder: OpenAIEmbedder, vector_store: PineconeVectorStore) -> None:
@@ -1789,19 +1995,15 @@ async def main() -> None:
     openai_settings = OpenAISettings.from_env()
     pinecone_settings = PineconeSettings.from_env()
     logger.info(
-        "Loaded settings answer_model=%s embedding_model=%s pinecone_host=%s pinecone_index=%s",
+        "Loaded settings answer_model=%s vector_store_path=%s",
         openai_settings.openai_answer_model,
-        openai_settings.openai_embedding_model,
-        pinecone_settings.pinecone_host,
-        pinecone_settings.pinecone_index_name,
+        pinecone_settings.vector_store_path,
     )
 
     _print_model_config(openai_settings)
-    print(f"pinecone_index: {pinecone_settings.pinecone_index_name}")
-    print(f"pinecone_namespace: {pinecone_settings.pinecone_namespace}")
+    print(f"vector_store: {pinecone_settings.vector_store_path}")
 
-    shared_llm_client = _llm_client(openai_settings)
-    embedder = OpenAIEmbedder(shared_llm_client)
+    embedder = OpenAIEmbedder()
     vector_store = PineconeVectorStore(pinecone_settings)
     await _ingest_data(embedder, vector_store)
     retriever = ResearchPaperRetriever(embedder=embedder, vector_store=vector_store)

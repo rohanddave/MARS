@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import Any
 
@@ -7,7 +8,6 @@ import httpx
 
 from app.config import OpenAISettings
 from app.models.answer import CompletionResult, TokenUsage
-from app.openai_rate_limit import retry_after_seconds, trigger_openai_cooldown, wait_for_openai_cooldown
 
 logger = logging.getLogger(__name__)
 
@@ -35,24 +35,59 @@ class LLMClient:
             len(prompt),
             self.settings.openai_answer_max_output_tokens,
         )
-        body = {
+        system_message = instructions or (
+            "You answer questions about a code repository. Use only the supplied context. "
+            "When the context is insufficient, say what is missing instead of guessing."
+        )
+        body: dict[str, Any] = {
             "model": self.settings.openai_answer_model,
-            "instructions": instructions
-            or (
-                "You answer questions about a code repository. Use only the supplied context. "
-                "When the context is insufficient, say what is missing instead of guessing."
-            ),
-            "input": prompt,
-            "max_output_tokens": max_output_tokens or self.settings.openai_answer_max_output_tokens,
+            "messages": [
+                {"role": "system", "content": system_message},
+                {"role": "user", "content": prompt},
+            ],
+            "max_tokens": max_output_tokens or self.settings.openai_answer_max_output_tokens,
         }
 
-        response = await self._post_with_rate_limit_retry("/responses", body, label="responses")
+        url = f"{self.settings.openai_base_url.rstrip('/')}/chat/completions"
+        try:
+            async with httpx.AsyncClient(timeout=self.settings.openai_timeout_seconds) as client:
+                response = await client.post(
+                    url,
+                    json=body,
+                    headers={
+                        "Authorization": f"Bearer {self.settings.openai_api_key}",
+                        "Content-Type": "application/json",
+                    },
+                )
+        except httpx.ConnectError as exc:
+            logger.error("Cannot connect to LLM server url=%s error=%s", url, exc)
+            raise LLMClientError(
+                f"Cannot connect to LLM server at {self.settings.openai_base_url} — "
+                f"is the vLLM/inference server running? (error: {exc})"
+            ) from exc
+        except httpx.TimeoutException as exc:
+            logger.error("LLM request timed out url=%s timeout=%s error=%s", url, self.settings.openai_timeout_seconds, exc)
+            raise LLMClientError(
+                f"LLM request timed out after {self.settings.openai_timeout_seconds}s "
+                f"to {self.settings.openai_base_url} (error: {exc})"
+            ) from exc
+
+        if response.status_code == 429:
+            retry_after = float(response.headers.get("retry-after", 0))
+            wait = max(retry_after, 10.0)
+            logger.warning("Rate limited (429), retrying in %.1fs", wait)
+            await asyncio.sleep(wait)
+            return await self.complete(prompt, instructions, max_output_tokens)
 
         if not 200 <= response.status_code < 300:
-            logger.error("OpenAI Responses API failed status=%s body=%s", response.status_code, response.text)
-            raise LLMClientError(f"OpenAI Responses API request failed: {response.status_code} {response.text}")
+            logger.error("LLM API request failed url=%s status=%s body=%s", url, response.status_code, response.text)
+            raise LLMClientError(f"LLM API request failed: {response.status_code} {response.text}")
 
-        payload = response.json()
+        try:
+            payload = response.json()
+        except Exception as exc:
+            logger.error("LLM response is not valid JSON url=%s body=%s", url, response.text[:500])
+            raise LLMClientError(f"LLM returned non-JSON response: {response.text[:200]}") from exc
         result = CompletionResult(
             text=_extract_text(payload),
             token_usage=_extract_token_usage(payload),
@@ -65,63 +100,21 @@ class LLMClient:
         )
         return result
 
-    async def _post_with_rate_limit_retry(self, path: str, body: dict[str, Any], label: str) -> httpx.Response:
-        url = f"{self.settings.openai_base_url.rstrip('/')}{path}"
-        headers = {
-            "Authorization": f"Bearer {self.settings.openai_api_key}",
-            "Content-Type": "application/json",
-        }
-        max_retries = max(0, self.settings.openai_max_retries)
-
-        for attempt in range(1, max_retries + 2):
-            await wait_for_openai_cooldown(label)
-            async with httpx.AsyncClient(timeout=self.settings.openai_timeout_seconds) as client:
-                response = await client.post(url, json=body, headers=headers)
-
-            if response.status_code != 429:
-                return response
-
-            if attempt > max_retries:
-                return response
-
-            sleep_seconds = retry_after_seconds(
-                response.headers,
-                fallback_seconds=self.settings.openai_rate_limit_fallback_seconds,
-                attempt=attempt,
-            )
-            logger.warning(
-                "OpenAI rate limited request label=%s attempt=%s/%s sleep_seconds=%.1f body=%s",
-                label,
-                attempt,
-                max_retries + 1,
-                sleep_seconds,
-                response.text[:500],
-            )
-            await trigger_openai_cooldown(sleep_seconds, label)
-
-        raise LLMClientError("OpenAI retry loop ended unexpectedly")
-
 
 class LLMClientError(RuntimeError):
     pass
 
 
 def _extract_text(payload: dict[str, Any]) -> str:
-    output_text = payload.get("output_text")
-    if isinstance(output_text, str) and output_text.strip():
-        return output_text.strip()
+    choices = payload.get("choices")
+    if isinstance(choices, list) and choices:
+        message = choices[0].get("message") if isinstance(choices[0], dict) else None
+        if isinstance(message, dict):
+            content = message.get("content")
+            if isinstance(content, str) and content.strip():
+                return content.strip()
 
-    parts: list[str] = []
-    for item in payload.get("output") or []:
-        for content in item.get("content") or []:
-            text = content.get("text")
-            if isinstance(text, str) and text:
-                parts.append(text)
-
-    answer = "\n".join(parts).strip()
-    if not answer:
-        raise LLMClientError("OpenAI Responses API response did not include output text")
-    return answer
+    raise LLMClientError("Chat completions response did not include message content")
 
 
 def _extract_token_usage(payload: dict[str, Any]) -> TokenUsage:
@@ -129,8 +122,8 @@ def _extract_token_usage(payload: dict[str, Any]) -> TokenUsage:
     if not isinstance(usage, dict):
         return TokenUsage()
 
-    input_tokens = _optional_int(usage.get("input_tokens"))
-    output_tokens = _optional_int(usage.get("output_tokens"))
+    input_tokens = _optional_int(usage.get("prompt_tokens"))
+    output_tokens = _optional_int(usage.get("completion_tokens"))
     total_tokens = _optional_int(usage.get("total_tokens"))
     if total_tokens is None and input_tokens is not None and output_tokens is not None:
         total_tokens = input_tokens + output_tokens
